@@ -1,0 +1,56 @@
+services:
+  postgresql:
+    container_name: testing-postgresql
+    image: postgres:17.5-bullseye
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: testing
+    networks:
+      - test-network
+    volumes:
+      - ./data/postgresql/testing:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: always
+
+  fastapi:
+    container_name: testing-fastapi
+    build:
+      context: ./src/app
+    environment:
+      - PYTHONPATH=/src
+    working_dir: /src/app
+    command: sh -c "uvicorn beta:app --reload --host 0.0.0.0 --port 8000 --log-level debug"
+    volumes:
+      - ./src/app:/src/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgresql
+    networks:
+      - test-network
+    restart: always
+
+  glorybot:
+    container_name: testing-glorybot
+    build:
+      context: ./src/glorybot
+    environment:
+      - PYTHONPATH=/src
+    working_dir: /src/glorybot
+    command: sh -c "python main.py"
+    volumes:
+      - ./src/glorybot:/src/glorybot
+      - ./src/app/schema/v0/answer.py:/src/app/schema/v0/answer.py
+      - ./sounds:/src/sounds
+      - ./configs/.env.glorybot:/src/configs/.env.glorybot
+    depends_on:
+      - fastapi
+    networks:
+      - test-network
+    restart: always
+
+networks:
+  test-network:
+    driver: bridge

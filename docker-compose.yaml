@@ -1,0 +1,56 @@
+services:
+  postgresql:
+    container_name: postgresql
+    image: postgres:17.5-bullseye
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: gloryteam
+    networks:
+      - glorympia-network
+    volumes:
+      - ./data/postgresql/gloryteam:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: always
+
+  fastapi:
+    container_name: fastapi
+    build:
+      context: ./src/app
+    environment:
+      - PYTHONPATH=/src
+    working_dir: /src/app
+    command: sh -c "uvicorn main:app --reload --host 0.0.0.0 --port 8000"
+    volumes:
+      - ./src/app:/src/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgresql
+    networks:
+      - glorympia-network
+    restart: always
+
+  glorybot:
+    container_name: glorybot
+    build:
+      context: ./src/glorybot
+    environment:
+      - PYTHONPATH=/src
+    working_dir: /src/glorybot
+    command: sh -c "python main.py"
+    volumes:
+      - ./src/glorybot:/src/glorybot
+      - ./src/app/schema/v0/answer.py:/src/app/schema/v0/answer.py
+      - ./sounds:/src/sounds
+      - ./configs/.env.glorybot:/src/configs/.env.glorybot
+    depends_on:
+      - fastapi
+    networks:
+      - glorympia-network
+    restart: always
+
+networks:
+  glorympia-network:
+    driver: bridge
