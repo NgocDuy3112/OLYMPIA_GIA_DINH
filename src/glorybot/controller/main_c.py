@@ -48,7 +48,7 @@ class ControllerView(View):
         ping_embed = create_bot_embed_message(
             title="KHỞI ĐỘNG",
             description="Nhấn vào nút BẤM CHUÔNG để giành quyền trả lời!",
-            color=discord.Color.blue()
+            color=WHITE
         )
         await bot.get_channel(PING_CHANNEL_ID).send(embed=ping_embed, view=KhoiDongView())
 
@@ -62,8 +62,8 @@ class ControllerView(View):
         await bot.get_channel(CONTROLLER_CHANNEL_ID).send(embed=embed, view=VuotChuongNgaiVatControllerView())
         ping_embed = create_bot_embed_message(
             title="VƯỢT CHƯỚNG NGẠI VẬT",
-            description="Nhấn vào nút BẤM CHUÔNG để giành quyền trả lời chướng ngại vật!",
-            color=discord.Color.blue()
+            description="Nhấn vào nút BẤM CHUÔNG để giành quyền trả lời Ổ Khoá và Chướng Ngại Vật!",
+            color=WHITE
         )
         await bot.get_channel(PING_CHANNEL_ID).send(embed=ping_embed, view=VuotChuongNgaiVatView())
 
@@ -85,9 +85,9 @@ class ControllerView(View):
         )
         await bot.get_channel(CONTROLLER_CHANNEL_ID).send(embed=embed, view=VeDichControllerView())
         ping_embed = create_bot_embed_message(
-            title="KHỞI ĐỘNG",
+            title="VỀ ĐÍCH",
             description="Nhấn vào nút BẤM CHUÔNG để giành quyền trả lời!",
-            color=discord.Color.blue()
+            color=WHITE
         )
         await bot.get_channel(PING_CHANNEL_ID).send(embed=ping_embed, view=VeDichView())
 

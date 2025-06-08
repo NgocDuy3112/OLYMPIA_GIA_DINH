@@ -8,6 +8,8 @@ class BasePlayerBasicStatisticsSchema(BaseModel):
 
 class PlayerPointBasicStatisticsSchema(BasePlayerBasicStatisticsSchema):
     total_points: int = Field(ge=0, default=0, multiple_of=5)
+
+class PlayerPointJerseyStatisticsSchema(PlayerPointBasicStatisticsSchema):
     bonus_points: int = Field(ge=0, default=0, multiple_of=5)
 
 class PlayerGBasicStatisticsSchema(BasePlayerBasicStatisticsSchema):
@@ -21,13 +23,13 @@ class PlayerCorrectnessBasicStatisticsSchema(BasePlayerBasicStatisticsSchema):
 
 
 class YellowPlayerLeaderboardSchema(BaseModel):
-    leaderboard: list[PlayerPointBasicStatisticsSchema]
+    leaderboard: list[PlayerPointJerseyStatisticsSchema]
 
 class WhitePlayerLeaderboardSchema(BaseModel):
-    leaderboard: list[PlayerPointBasicStatisticsSchema]
+    leaderboard: list[PlayerPointJerseyStatisticsSchema]
 
 class RedPlayerLeaderboardSchema(BaseModel):
-    leaderboard: list[PlayerPointBasicStatisticsSchema]
+    leaderboard: list[PlayerPointJerseyStatisticsSchema]
 
 class PinkPlayerLeaderboardSchema(BaseModel):
     leaderboard: list[PlayerPointBasicStatisticsSchema]

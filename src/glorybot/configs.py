@@ -55,3 +55,5 @@ ROUND_NAMES = ['KHỞI ĐỘNG', 'VƯỢT CHƯỚNG NGẠI VẬT', 'TĂNG TỐC'
 
 PING_AUDIO_PATH = "/src/sounds/ping.mp3"
 VCNV_AUDIO_PATH = "/src/sounds/vcnv.mp3"
+PREPARE_TO_PING_AUDIO_PATH = "/src/sounds/prepare-to-ping.mp3"
+CHANGE_ANSWER_AUDIO_PATH = "/src/sounds/change-answer.mp3"

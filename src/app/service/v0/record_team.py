@@ -59,7 +59,7 @@ async def get_team_records_by_match_code_from_db(match_code: str, session: Async
 
 
 async def create_team_record_in_db(record_schema: RecordTeamSchemaIn, session: AsyncSession):
-    team_id_query = text("SELECT id FROM team WHERE team_code := team_code")
+    team_id_query = text("SELECT id FROM team WHERE team_code = :team_code")
     team_id_query_result = await session.execute(team_id_query.bindparams(team_code=record_schema.team_code))
     team_row = team_id_query_result.first()
     if not team_row:
@@ -108,7 +108,7 @@ async def create_team_record_in_db(record_schema: RecordTeamSchemaIn, session: A
 
 
 async def update_team_record_in_db(record_id: UUID, record_schema: RecordTeamSchemaIn, session: AsyncSession):
-    team_id_query = text("SELECT id FROM team WHERE team_code := team_code")
+    team_id_query = text("SELECT id FROM team WHERE team_code = :team_code")
     team_id_query_result = await session.execute(team_id_query.bindparams(player_code=record_schema.player_code))
     team_row = team_id_query_result.first()
     if not team_row:

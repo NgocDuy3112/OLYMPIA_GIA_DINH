@@ -101,7 +101,12 @@ async def create_bonus_in_db(bonus_schema: BonusSchemaIn, session: AsyncSession)
     if not player_id_row:
         raise HTTPException(status_code=404, detail="Player not found!")
     
-    bonus_model = BonusModel(player_id=player_id_row.id)
+    bonus_model = BonusModel(
+        player_id=player_id_row.id,
+        point_score=bonus_schema.point_score,
+        g_score=bonus_schema.g_score, 
+        d_score=bonus_schema.d_score
+    )
     query = text("""
         INSERT INTO bonus (
             id,
@@ -147,7 +152,10 @@ async def update_bonus_in_db(bonus_id: UUID, bonus_schema: BonusSchemaIn, sessio
     
     bonus_model = BonusModel(
         updated_at=datetime.now(timezone.utc),
-        player_id=player_id_row.id
+        player_id=player_id_row.id,
+        point_score=bonus_schema.point_score,
+        g_score=bonus_schema.g_score, 
+        d_score=bonus_schema.d_score
     )
     query = text("""
         UPDATE bonus

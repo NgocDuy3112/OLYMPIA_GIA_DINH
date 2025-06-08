@@ -15,7 +15,7 @@ async def get_yellow_leaderboard_from_db(session: AsyncSession) -> YellowPlayerL
     if not rows:
         raise HTTPException(status_code=404, detail="Leaderboard can not be created!")
     leaderboard = [
-        PlayerPointBasicStatisticsSchema(
+        PlayerPointJerseyStatisticsSchema(
             player_name=row.player_name,
             total_points=row.total_points,
             bonus_points=row.bonus_points
@@ -32,7 +32,7 @@ async def get_white_leaderboard_from_db(session: AsyncSession) -> WhitePlayerLea
     if not rows:
         raise HTTPException(status_code=404, detail="Leaderboard can not be created!")
     leaderboard = [
-        PlayerPointBasicStatisticsSchema(
+        PlayerPointJerseyStatisticsSchema(
             player_name=row.player_name,
             total_points=row.total_points,
             bonus_points=row.bonus_points
@@ -49,7 +49,7 @@ async def get_red_leaderboard_from_db(session: AsyncSession) -> RedPlayerLeaderb
     if not rows:
         raise HTTPException(status_code=404, detail="Leaderboard can not be created!")
     leaderboard = [
-        PlayerPointBasicStatisticsSchema(
+        PlayerPointJerseyStatisticsSchema(
             player_name=row.player_name,
             total_points=row.total_points,
             bonus_points=row.bonus_points

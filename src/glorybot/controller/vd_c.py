@@ -5,24 +5,27 @@ from glorybot import global_states
 class VeDichControllerView(View):
     def __init__(self):
         super().__init__(timeout=None)
-        self.start_button_1 = Button(label="10s", style=ButtonStyle.blurple, custom_id="VD_START_1")
-        self.start_button_2 = Button(label="15s", style=ButtonStyle.blurple, custom_id="VD_START_2")
-        self.start_button_3 = Button(label="20s", style=ButtonStyle.blurple, custom_id="VD_START_3")
-        self.start_button_4 = Button(label="25s", style=ButtonStyle.blurple, custom_id="VD_START_4")
-        self.reset_button = Button(label="Reset đồng hồ", style=ButtonStyle.red, custom_id="VD_RESET")
+        self.start_button_1 = Button(label="10s", style=ButtonStyle.blurple, custom_id="VD_START_1", row=0)
+        self.start_button_2 = Button(label="15s", style=ButtonStyle.blurple, custom_id="VD_START_2", row=0)
+        self.start_button_3 = Button(label="20s", style=ButtonStyle.blurple, custom_id="VD_START_3", row=0)
+        self.start_button_4 = Button(label="25s", style=ButtonStyle.blurple, custom_id="VD_START_4", row=0)
+        self.change_button = Button(label="5s thay đổi đáp án", style=ButtonStyle.blurple, custom_id="VD_CHANGE", row=0)
+        self.reset_button = Button(label="Reset đồng hồ", style=ButtonStyle.red, custom_id="VD_RESET", row=1)
 
         self.add_item(self.start_button_1)
         self.add_item(self.start_button_2)
         self.add_item(self.start_button_3)
         self.add_item(self.start_button_4)
         self.add_item(self.reset_button)
+        self.add_item(self.change_button)
 
         self.start_button_1.callback = self.generate_vd_callback(10)
         self.start_button_2.callback = self.generate_vd_callback(15)
         self.start_button_3.callback = self.generate_vd_callback(20)
         self.start_button_4.callback = self.generate_vd_callback(25)
         self.reset_button.callback = self.reset_button_callback
-    
+        self.change_button.callback = self.change_button_callback
+
     def generate_vd_callback(self, delay_seconds):
         async def callback(interaction):
             await self.start_vd_button_callback(delay_seconds, interaction)
@@ -76,3 +79,9 @@ class VeDichControllerView(View):
         self.start_button_3.disabled = False
         self.start_button_4.disabled = False
         await interaction.response.edit_message(view=self)
+
+    async def change_button_callback(self, interaction: Interaction):
+        if global_states.voice_client and global_states.voice_client.is_connected():
+            global_states.voice_client.play(
+                discord.FFmpegPCMAudio(executable=FFMPEG_PATH, source=CHANGE_ANSWER_AUDIO_PATH)
+            )

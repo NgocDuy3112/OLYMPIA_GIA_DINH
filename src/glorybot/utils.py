@@ -4,6 +4,8 @@ import discord
 
 from configs import *
 
+WHITE = 0xeeffee
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("GLORIA LOGGING SYSTEM")

@@ -15,4 +15,4 @@ async def create_answer(answer_schema: AnswerSchema):
 
 @v0_router.get("/")
 async def get_answers():
-    return answers
+    return answers[-3:]
