@@ -21,7 +21,6 @@ class VuotChuongNgaiVatControllerView(View):
 
     async def start_vcnv_button_callback(self, delay_seconds: int, interaction: Interaction):
         self.start_button.disabled = True
-        self.reset_button.disabled = True
         await interaction.response.edit_message(view=self)
         start_time = datetime.now().astimezone()
         try:
@@ -31,7 +30,7 @@ class VuotChuongNgaiVatControllerView(View):
             for source_channel_id in GLORIA_PLAYER_CHANNEL_IDS:
                 channel = bot.get_channel(source_channel_id)
                 embed = create_bot_embed_message(
-                    title="VƯỢT CHƯỚNG NGẠI VẬT",
+                    title="VƯỢT ĐÈO",
                     description=f"Thời gian trả lời câu hỏi bắt đầu!\nNhập câu trả lời cho câu hỏi ở kênh chat tương ứng với tên của bạn và nhấn Enter trong {delay_seconds} giây để hệ thống ghi nhận câu trả lời.\nĐể trả lời Chướng ngại vật hoặc Ổ khoá, vào kênh <#{PING_CHANNEL_ID}> và nhấn vào nút BẤM CHUÔNG và chọn vào nút bạn muốn trả lời. Lưu ý: Bạn chỉ được phép nhấn chuông trả lời mỗi Ổ Khoá và Chướng Ngại Vật DUY NHẤT MỘT LẦN!",
                     color=discord.Color.blue()
                 )
@@ -44,7 +43,7 @@ class VuotChuongNgaiVatControllerView(View):
             for source_channel_id in GLORIA_PLAYER_CHANNEL_IDS:
                 channel = bot.get_channel(source_channel_id)
                 embed = create_bot_embed_message(
-                    title="VƯỢT CHƯỚNG NGẠI VẬT",
+                    title="VƯỢT ĐÈO",
                     description="Thời gian trả lời câu hỏi kết thúc!",
                     color=discord.Color.red()
                 )
@@ -58,5 +57,4 @@ class VuotChuongNgaiVatControllerView(View):
 
     async def reset_button_callback(self, interaction: Interaction):
         self.start_button.disabled = False
-        self.reset_button.disabled = False
         await interaction.response.edit_message(view=self)

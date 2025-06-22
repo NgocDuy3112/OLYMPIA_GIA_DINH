@@ -30,7 +30,7 @@ class KhoiDongControllerView(View):
             for source_channel_id in GLORIA_PLAYER_CHANNEL_IDS:
                 channel = bot.get_channel(source_channel_id)
                 embed = create_bot_embed_message(
-                    title="KHỞI ĐỘNG",
+                    title="XUẤT PHÁT",
                     description=f"Thời gian trả lời câu hỏi bắt đầu!\nNhập câu trả lời cho câu hỏi ở kênh chat tương ứng với tên của bạn và nhấn Enter trong {delay_seconds} giây để hệ thống ghi nhận câu trả lời.",
                     color=WHITE
                 )
@@ -43,7 +43,7 @@ class KhoiDongControllerView(View):
             for source_channel_id in GLORIA_PLAYER_CHANNEL_IDS:
                 channel = bot.get_channel(source_channel_id)
                 embed = create_bot_embed_message(
-                    title="KHỞI ĐỘNG",
+                    title="XUẤT PHÁT",
                     description="Thời gian trả lời câu hỏi kết thúc!",
                     color=discord.Color.red()
                 )

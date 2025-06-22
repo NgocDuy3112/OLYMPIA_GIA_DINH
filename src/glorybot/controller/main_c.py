@@ -15,9 +15,9 @@ from glorybot import global_states
 class ControllerView(View):
     def __init__(self):
         super().__init__(timeout=None)
-        self.kd_button = Button(label="KHỞI ĐỘNG", style=ButtonStyle.blurple, custom_id="C_KD", row=0)
-        self.vcnv_button = Button(label="VƯỢT CHƯỚNG NGẠI VẬT", style=ButtonStyle.blurple, custom_id="C_VCNV", row=0)
-        self.tt_button = Button(label="TĂNG TỐC", style=ButtonStyle.blurple, custom_id="C_TT", row=0)
+        self.kd_button = Button(label="XUẤT PHÁT", style=ButtonStyle.blurple, custom_id="C_KD", row=0)
+        self.vcnv_button = Button(label="VƯỢT ĐÈO", style=ButtonStyle.blurple, custom_id="C_VCNV", row=0)
+        self.tt_button = Button(label="THẦN TỐC", style=ButtonStyle.blurple, custom_id="C_TT", row=0)
         self.vd_button = Button(label="VỀ ĐÍCH", style=ButtonStyle.blurple, custom_id="C_VD", row=0)
         # self.chp_button = Button(label="CÂU HỎI PHỤ", style=ButtonStyle.blurple, custom_id="C_CHP", row=0)
         self.turn_off_button = Button(label="TẮT BOT", style=ButtonStyle.red, custom_id="C_TURN_OFF", row=1)
