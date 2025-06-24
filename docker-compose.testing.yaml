@@ -42,7 +42,6 @@ services:
     command: sh -c "python main.py"
     volumes:
       - ./src/glorybot:/src/glorybot
-      - ./src/app/schema/v0/answer.py:/src/app/schema/v0/answer.py
       - ./sounds:/src/sounds
       - ./configs/.env.glorybot:/src/configs/.env.glorybot
     depends_on:
