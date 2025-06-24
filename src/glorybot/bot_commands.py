@@ -1,5 +1,5 @@
 from glorybot.helpers import *
-from glorybot.controller.main_c import *
+from glorybot.v0.controller.main_c import *
 from glorybot import global_states
 
 

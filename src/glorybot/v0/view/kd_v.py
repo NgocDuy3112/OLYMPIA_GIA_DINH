@@ -24,7 +24,7 @@ class KhoiDongView(View):
         global_states.reset_event.set()
 
         embed = create_user_embed_message(
-            title="KHỞI ĐỘNG",
+            title="XUẤT PHÁT",
             description=f"{interaction.user.nick} đã giành được quyền trả lời!",
             color=discord.Color.red(),
             interaction=interaction
@@ -57,7 +57,7 @@ class KhoiDongView(View):
 
         # Step 1: Show "Chú ý hiệu lệnh!" while sound plays
         attention_embed = create_bot_embed_message(
-            title="KHỞI ĐỘNG",
+            title="XUẤT PHÁT",
             description="Chú ý hiệu lệnh!",
             color=WHITE
         )
@@ -69,7 +69,7 @@ class KhoiDongView(View):
 
         # Step 2: Enable the button and update the embed
         ready_embed = create_bot_embed_message(
-            title="KHỞI ĐỘNG",
+            title="XUẤT PHÁT",
             description="Nhấn vào nút BẤM CHUÔNG để giành quyền trả lời!",
             color=WHITE
         )

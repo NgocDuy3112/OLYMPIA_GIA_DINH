@@ -93,7 +93,7 @@ class VuotChuongNgaiVatView(View):
         self.CNV_STRING += f"\n{self.CNV_INDEX}. {user_display} đã giành được quyền **{label}**!"
 
         embed = create_user_embed_message(
-            title="VƯỢT CHƯỚNG NGẠI VẬT",
+            title="VƯỢT ĐÈO",
             description=self.CNV_STRING,
             color=WHITE,
             interaction=interaction

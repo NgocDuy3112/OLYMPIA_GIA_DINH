@@ -1,9 +1,23 @@
-from aiohttp import BasicAuth, ClientSession
+from aiohttp import ClientSession
 import asyncio
 
 from glorybot import global_states
 from glorybot.utils import *
-from app.schema.v0.answer import AnswerSchema
+from pydantic import BaseModel, Field
+from decimal import Decimal
+from typing import Annotated
+
+
+
+class BaseAnswerSchema(BaseModel):
+    index: int = Field(gt=0, lt=4)
+    name: str = Field(min_length=1)
+    answer: str = Field()
+    time: Annotated[Decimal, Field(decimal_places=3)]
+
+
+class AnswerSchema(BaseAnswerSchema):
+    pass
 
 
 def create_bot_embed_message(title: str, description: str, color: discord.Color):

@@ -1,13 +1,13 @@
 from glorybot.helpers import *
 
-from glorybot.controller.kd_c import KhoiDongControllerView
-from glorybot.controller.vcnv_c import VuotChuongNgaiVatControllerView
-from glorybot.controller.tt_c import TangTocControllerView
-from glorybot.controller.vd_c import VeDichControllerView
+from glorybot.v0.controller.kd_c import KhoiDongControllerView
+from glorybot.v0.controller.vcnv_c import VuotChuongNgaiVatControllerView
+from glorybot.v0.controller.tt_c import TangTocControllerView
+from glorybot.v0.controller.vd_c import VeDichControllerView
 
-from glorybot.view.kd_v import KhoiDongView
-from glorybot.view.vcnv_v import VuotChuongNgaiVatView
-from glorybot.view.vd_v import VeDichView
+from glorybot.v0.view.kd_v import KhoiDongView
+from glorybot.v0.view.vcnv_v import VuotChuongNgaiVatView
+from glorybot.v0.view.vd_v import VeDichView
 
 from glorybot import global_states
 
@@ -40,13 +40,13 @@ class ControllerView(View):
     async def kd_button_callback(self, interaction: Interaction):
         await interaction.response.edit_message(view=self)
         target_embed = create_bot_embed_message(
-            title="KHỞI ĐỘNG",
+            title="XUẤT PHÁT",
             description="Bộ đếm giờ",
             color=discord.Color.gold()
         )
         await bot.get_channel(CONTROLLER_CHANNEL_ID).send(embed=target_embed, view=KhoiDongControllerView())
         ping_embed = create_bot_embed_message(
-            title="KHỞI ĐỘNG",
+            title="XUẤT PHÁT",
             description="Nhấn vào nút BẤM CHUÔNG để giành quyền trả lời!",
             color=WHITE
         )
@@ -55,13 +55,13 @@ class ControllerView(View):
     async def vcnv_button_callback(self, interaction: Interaction):
         await interaction.response.edit_message(view=self)
         embed = create_bot_embed_message(
-            title="VƯỢT CHƯỚNG NGẠI VẬT",
+            title="VƯỢT ĐÈO",
             description="Bộ đếm giờ",
             color=discord.Color.gold()
         )
         await bot.get_channel(CONTROLLER_CHANNEL_ID).send(embed=embed, view=VuotChuongNgaiVatControllerView())
         ping_embed = create_bot_embed_message(
-            title="VƯỢT CHƯỚNG NGẠI VẬT",
+            title="VƯỢT ĐÈO",
             description="Nhấn vào nút BẤM CHUÔNG để giành quyền trả lời Ổ Khoá và Chướng Ngại Vật!",
             color=WHITE
         )
@@ -70,7 +70,7 @@ class ControllerView(View):
     async def tt_button_callback(self, interaction: Interaction):
         await interaction.response.edit_message(view=self)
         embed = create_bot_embed_message(
-            title="TĂNG TỐC",
+            title="THẦN TỐC",
             description="Bộ đếm giờ",
             color=discord.Color.gold()
         )
