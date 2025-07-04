@@ -34,24 +34,24 @@ The GLO System is a modular Python-based platform designed for scalable data pro
 ### Prerequisites
 
 - Docker & Docker Compose
-- Python 3.8+
+- Python 3.11+
 - (Optional) PostgreSQL client tools
 
 ### Setup
 
 1. **Clone the repository:**
    ```sh
-   git clone <repo-url>
+   git clone https://github.com/NgocDuy3112/GLORYTEAM
    cd system
    ```
 
 2. **Start services with Docker Compose:**
    ```sh
-   docker-compose up --build
+   docker-compose -f docker-compose.yaml -p gloryteam up --build
    ```
 
 3. **Access the application:**
-   - API endpoints: `http://localhost:<port>/api/v1/`
+   - API endpoints: `http://localhost:8000/api/v1/`
    - Jupyter Notebooks: Open `notebooks/analysis.ipynb` in your preferred environment.
 
 ### Database
@@ -66,6 +66,7 @@ The GLO System is a modular Python-based platform designed for scalable data pro
   ```sh
   pip install -r <service>/requirements.txt
   ```
+  where service is one of those values: **app**, **assistant** or **glorybot**
 
 ## Contributing
 
@@ -77,3 +78,8 @@ The GLO System is a modular Python-based platform designed for scalable data pro
 ## License
 
 [MIT License](LICENSE)
+
+
+## TODO
+- Complete the code for assistant service.
+- Complete the documentation for future usage.
