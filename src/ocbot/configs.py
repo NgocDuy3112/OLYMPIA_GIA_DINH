@@ -7,7 +7,7 @@ from discord.ui import View, Button
 import os
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path="/src/configs/.env.glorybot",verbose=True, override=True)
+load_dotenv(dotenv_path="/src/configs/.env.ocbot",verbose=True, override=True)
 bot = commands.Bot(command_prefix="/", intents=discord.Intents.all())
 print(bot)
 

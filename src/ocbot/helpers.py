@@ -3,6 +3,7 @@ import asyncio
 
 from ocbot import global_states
 from ocbot.utils import *
+from ocbot.configs import NGROK_ENDPOINT
 from pydantic import BaseModel, Field
 from decimal import Decimal
 from typing import Annotated
@@ -32,7 +33,7 @@ def create_user_embed_message(title: str, description: str, color: discord.Color
     return embed
 
 
-async def send_answer(player_index, player_name, record_time, answer, url: str=f"https://helped-allowing-mudfish.ngrok-free.app/v0/answers/"):
+async def send_answer(player_index, player_name, record_time, answer, url: str=NGROK_ENDPOINT):
     try:
         # Validate and structure data using the Pydantic model
         answer = AnswerSchema(

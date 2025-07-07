@@ -56,7 +56,7 @@ It uses **Docker** for containerization and **PostgreSQL** for data storage, pro
 
 2. **Start services using Docker Compose:**
    ```bash
-   docker-compose -f docker-compose.yaml -p gloryteam up --build
+   docker-compose -f docker-compose.yaml -p olympia-custom up --build
    ```
 
 3. **Access the platform:**
