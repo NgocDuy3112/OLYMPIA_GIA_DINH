@@ -1,8 +1,8 @@
 from aiohttp import ClientSession
 import asyncio
 
-from glorybot import global_states
-from glorybot.utils import *
+from ocbot import global_states
+from ocbot.utils import *
 from pydantic import BaseModel, Field
 from decimal import Decimal
 from typing import Annotated

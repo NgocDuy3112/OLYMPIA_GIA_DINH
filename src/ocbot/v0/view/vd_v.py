@@ -1,5 +1,5 @@
-from glorybot.helpers import *
-from glorybot import global_states
+from ocbot.helpers import *
+from ocbot import global_states
 
 
 class VeDichView(View):

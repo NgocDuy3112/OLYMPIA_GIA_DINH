@@ -38,18 +38,18 @@ services:
       - glorympia-network
     restart: always
 
-  glorybot:
-    container_name: glorybot
+  ocbot:
+    container_name: ocbot
     build:
-      context: ./src/glorybot
+      context: ./src/ocbot
     environment:
       - PYTHONPATH=/src
-    working_dir: /src/glorybot
+    working_dir: /src/ocbot
     command: sh -c "python main.py"
     volumes:
-      - ./src/glorybot:/src/glorybot
+      - ./src/ocbot:/src/ocbot
       - ./sounds:/src/sounds
-      - ./configs/.env.glorybot:/src/configs/.env.glorybot
+      - ./configs/.env.ocbot:/src/configs/.env.ocbot
     depends_on:
       - fastapi
     networks:

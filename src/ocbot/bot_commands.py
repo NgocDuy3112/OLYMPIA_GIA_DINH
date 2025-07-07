@@ -1,6 +1,6 @@
-from glorybot.helpers import *
-from glorybot.v0.controller.main_c import *
-from glorybot import global_states
+from ocbot.helpers import *
+from ocbot.v0.controller.main_c import *
+from ocbot import global_states
 
 
 @bot.command(name='delete')

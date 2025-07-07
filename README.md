@@ -1,12 +1,12 @@
-# GLO System
+# OLYMPIA CUSTOM SERVICES
 
 ## Overview
 
-The GLO System is a modular Python-based platform designed for scalable data processing, analysis, and automation. It leverages Docker for containerization, PostgreSQL for data storage, and provides a suite of services and APIs for various applications, including data analysis, media management, and bot automation.
+Olympia Custom Services is a modular Python-based platform designed for scalable data processing, analysis, and automation. It leverages Docker for containerization, PostgreSQL for data storage, and provides a suite of services and APIs for various applications, including data analysis, media management, and bot automation.
 
 ## Features
 
-- **Modular Architecture:** Organized into `src`, `assistant`, and `glorybot` modules for clear separation of concerns.
+- **Modular Architecture:** Organized into `src`, `assistant`, and `ocbot` modules for clear separation of concerns.
 - **RESTful APIs:** Versioned API endpoints for extensibility and backward compatibility.
 - **Database Integration:** Uses PostgreSQL with ready-to-use configuration and initialization scripts.
 - **Media & Data Management:** Handles audio, video, image, PDF, and tabular data.

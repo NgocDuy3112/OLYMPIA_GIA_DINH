@@ -1,15 +1,15 @@
-from glorybot.helpers import *
+from ocbot.helpers import *
 
-from glorybot.v0.controller.kd_c import KhoiDongControllerView
-from glorybot.v0.controller.vcnv_c import VuotChuongNgaiVatControllerView
-from glorybot.v0.controller.tt_c import TangTocControllerView
-from glorybot.v0.controller.vd_c import VeDichControllerView
+from ocbot.v0.controller.kd_c import KhoiDongControllerView
+from ocbot.v0.controller.vcnv_c import VuotChuongNgaiVatControllerView
+from ocbot.v0.controller.tt_c import TangTocControllerView
+from ocbot.v0.controller.vd_c import VeDichControllerView
 
-from glorybot.v0.view.kd_v import KhoiDongView
-from glorybot.v0.view.vcnv_v import VuotChuongNgaiVatView
-from glorybot.v0.view.vd_v import VeDichView
+from ocbot.v0.view.kd_v import KhoiDongView
+from ocbot.v0.view.vcnv_v import VuotChuongNgaiVatView
+from ocbot.v0.view.vd_v import VeDichView
 
-from glorybot import global_states
+from ocbot import global_states
 
 
 class ControllerView(View):
