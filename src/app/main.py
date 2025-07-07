@@ -73,6 +73,12 @@ async def get_status() -> str:
     return "GLORY-API IS RUNNING"
 
 
+
+@app.get("/health", status_code=200)
+async def health():
+    return {"status": "ok"}
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app="app.api.main:app", host="0.0.0.0", port=8000, reload=True)

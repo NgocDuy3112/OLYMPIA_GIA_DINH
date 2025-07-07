@@ -1,0 +1,40 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Editor & OS files
+*.swp
+*.swo
+*.bak
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Local config & secrets
+.env
+.env.*
+*.local
+*.log
+
+# Tests (if you ever add them inside glorybot)
+tests/
+test_*.py
+
+# Docker & Compose files
+Dockerfile
+docker-compose.yml
+
+# Data, media, or big local folders if any
+../../../data/
+../../../sounds/

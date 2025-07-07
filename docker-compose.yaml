@@ -56,6 +56,24 @@ services:
       - glorympia-network
     restart: always
 
+  test:
+    container_name: test
+    build:
+      context: ./src/app
+    working_dir: /
+    command: sh -c "pytest tests/app --maxfail=1 --disable-warnings -v"
+    environment:
+      - PYTHONPATH=/src
+    volumes:
+      - ./src:/src
+      - ./tests:/tests
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    networks:
+      - glorympia-network
+    restart: "no"
+
 networks:
   glorympia-network:
     driver: bridge
