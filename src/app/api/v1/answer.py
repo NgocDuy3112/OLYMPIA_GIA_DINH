@@ -3,7 +3,7 @@ from app.schema.v0.answer import AnswerSchema
 
 
 answers = []
-v0_router = APIRouter(prefix="/v0/answers", tags=["Answers - GLORYTEAM"])
+v0_router = APIRouter(prefix="/v1/answers", tags=["Answers - OGD3"])
 
 
 @v0_router.post("/")
@@ -15,4 +15,4 @@ async def create_answer(answer_schema: AnswerSchema):
 
 @v0_router.get("/")
 async def get_answers():
-    return answers[-3:]
+    return answers[-4:]

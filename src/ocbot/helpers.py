@@ -33,7 +33,7 @@ def create_user_embed_message(title: str, description: str, color: discord.Color
     return embed
 
 
-async def send_answer(player_index, player_name, record_time, answer, url: str=NGROK_ENDPOINT):
+async def send_answer(player_index, player_name, record_time, answer, url: str=f"{NGROK_ENDPOINT}/v0/answers/"):
     try:
         # Validate and structure data using the Pydantic model
         answer = AnswerSchema(

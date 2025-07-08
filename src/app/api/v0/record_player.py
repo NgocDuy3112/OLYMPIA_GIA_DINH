@@ -7,7 +7,7 @@ from app.db.dependencies import get_postgresql_async_session
 from app.service.v0 import record_player
 
 
-v0_router = APIRouter(prefix="/v0/player-records", tags=['Player''s Records'])
+v0_router = APIRouter(prefix="/v0/player-records", tags=['Player''s Records - GLORYTEAM'])
 
 
 @v0_router.get("/", response_model=Union[record_player.RecordPlayerSchemaOut, list[record_player.RecordPlayerSchemaOut]])

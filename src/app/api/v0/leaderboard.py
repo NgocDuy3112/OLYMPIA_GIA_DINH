@@ -19,7 +19,7 @@ LEADERBOARD_FUNCTIONS_MAPPING: dict[LeaderboardLiteral, LeaderboardCallable] = {
 }
 
 
-v0_router = APIRouter(prefix="/v0/leaderboards", tags=['Leaderboards'])
+v0_router = APIRouter(prefix="/v0/leaderboards", tags=['Leaderboards - GLORYTEAM'])
 
 
 @v0_router.get("/{leaderboard_type}", response_model=LeaderboardSchema)

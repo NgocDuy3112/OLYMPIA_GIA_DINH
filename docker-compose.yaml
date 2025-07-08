@@ -18,6 +18,9 @@ services:
       timeout: 10s
       retries: 5
     restart: always
+    profiles:
+      - production
+      - tests
 
   fastapi:
     container_name: fastapi
@@ -37,6 +40,9 @@ services:
     networks:
       - glorympia-network
     restart: always
+    profiles:
+      - production
+      - tests
 
   ocbot:
     container_name: ocbot
@@ -55,9 +61,11 @@ services:
     networks:
       - glorympia-network
     restart: always
+    profiles:
+      - production
 
-  test:
-    container_name: test
+  testing:
+    container_name: testing
     build:
       context: ./src/app
     working_dir: /
@@ -73,6 +81,8 @@ services:
     networks:
       - glorympia-network
     restart: "no"
+    profiles:
+      - tests
 
 networks:
   glorympia-network:
