@@ -70,13 +70,13 @@ app.include_router(bonus.v0_router)
 
 @app.get("/", tags=['Root'])
 async def get_status() -> str:
-    return "GLORY-API IS RUNNING"
+    return "OLYMPIA CUSTOM API IS RUNNING"
 
 
 
 @app.get("/health", status_code=200)
 async def health():
-    return {"status": "ok"}
+    return {"status": "ok", "mode": "production"}
 
 
 if __name__ == "__main__":
