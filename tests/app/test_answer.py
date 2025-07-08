@@ -1,10 +1,12 @@
 import pytest
 from aiohttp import ClientSession
+from decimal import Decimal
+
 from app.main import app
-from tests.configs import NGROK_ENDPOINT
 from app.api.v0 import answer
 from app.schema.v0.answer import AnswerSchema
-from decimal import Decimal
+from tests.configs import NGROK_ENDPOINT
+
 
 
 @pytest.mark.asyncio

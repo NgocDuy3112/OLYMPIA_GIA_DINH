@@ -76,7 +76,7 @@ async def get_status() -> str:
 
 @app.get("/health", status_code=200)
 async def health():
-    return {"status": "ok", "mode": "production"}
+    return {"status": "ok"}
 
 
 if __name__ == "__main__":
