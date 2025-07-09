@@ -1,5 +1,6 @@
 import pytest
 from aiohttp import ClientSession
+
 from app.main import app
 from tests.configs import NGROK_ENDPOINT
 
