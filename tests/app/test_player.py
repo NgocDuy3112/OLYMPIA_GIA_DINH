@@ -24,7 +24,22 @@ async def test_get_all_players():
 @pytest.mark.asyncio
 async def test_get_player_by_unexisted_player_id():
     """
-    Test GET /v0/players/?player_id=<uuid> returns a single player.
+    Test GET /v0/players/?player_id=<uuid>, which <uuid> is an unexisted player_id, returns an 404 Not Found Error.
+    """
+    base_url = NGROK_ENDPOINT
+
+    # Use a known player UUID from your DB
+    player_id = "b3e7bc1e-04de-4b2d-a5e0-5dc29a3c13b5"  # replace with real one
+
+    async with ClientSession() as session:
+        async with session.get(f"{base_url}/v0/players/", params={"player_id": player_id}) as response:
+            assert response.status == 404
+
+
+@pytest.mark.asyncio
+async def test_get_player_by_existed_player_id():
+    """
+    Test GET /v0/players/?player_id=<uuid>, which <uuid> is an existed player_id, returns a player.
     """
     base_url = NGROK_ENDPOINT
 
@@ -43,12 +58,28 @@ async def test_get_player_by_unexisted_player_id():
 @pytest.mark.asyncio
 async def test_get_player_by_unexisted_player_code():
     """
-    Test GET /v0/players/player-code/{player_code} returns a player.
+    Test GET /v0/players/player-code/{player_code}, which {player_code} is an unexisted player_code, returns an 404 Not Found Error.
     """
     base_url = NGROK_ENDPOINT
 
     # Use a known player code from your DB
     player_code = "GLO_P_99"  # replace with real one
+
+    async with ClientSession() as session:
+        async with session.get(f"{base_url}/v0/players/player-code/{player_code}") as response:
+            assert response.status == 404
+
+
+
+@pytest.mark.asyncio
+async def test_get_player_by_unexisted_player_code():
+    """
+    Test GET /v0/players/player-code/{player_code}, which {player_code} is an existed player_code, returns a player.
+    """
+    base_url = NGROK_ENDPOINT
+
+    # Use a known player code from your DB
+    player_code = "GLO_P_01"  # replace with real one
 
     async with ClientSession() as session:
         async with session.get(f"{base_url}/v0/players/player-code/{player_code}") as response:
