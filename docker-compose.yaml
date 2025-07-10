@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: gloryteam
     networks:
-      - glorympia-network
+      - olympia-custom-network
     volumes:
       - ./data/postgresql/gloryteam:/var/lib/postgresql/data
     ports:
@@ -38,7 +38,7 @@ services:
       postgresql:
         condition: service_healthy
     networks:
-      - glorympia-network
+      - olympia-custom-network
     restart: always
     profiles:
       - production
@@ -59,7 +59,7 @@ services:
     depends_on:
       - fastapi
     networks:
-      - glorympia-network
+      - olympia-custom-network
     restart: always
     profiles:
       - production
@@ -79,11 +79,11 @@ services:
       postgresql:
         condition: service_healthy
     networks:
-      - glorympia-network
+      - olympia-custom-network
     restart: "no"
     profiles:
       - tests
 
 networks:
-  glorympia-network:
+  olympia-custom-network:
     driver: bridge

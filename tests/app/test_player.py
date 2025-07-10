@@ -1,53 +1,52 @@
+"""
+Tests for the player API endpoints.
+Covers GET operations for all players, by player_id, and by player_code.
+"""
+
 import pytest
 from aiohttp import ClientSession
 from uuid import UUID
-
-from app.api.v0 import team
-from app.schema.v0.team import TeamSchemaOut
 from tests.configs import NGROK_ENDPOINT
+
+base_url = NGROK_ENDPOINT
+headers = {'Content-Type': 'application/json; charset=utf-8'}
+
 
 
 @pytest.mark.asyncio
 async def test_get_all_players():
     """
-    Test GET /v0/players/ returns a list of players.
+    Test GET /v0/players/ returns a list of players with id and name fields.
     """
-    base_url = NGROK_ENDPOINT
     async with ClientSession() as session:
-        async with session.get(f"{base_url}/v0/players/") as response:
+        async with session.get(f"{base_url}/v0/players/", headers=headers) as response:
             assert response.status == 200
             data = await response.json()
             assert isinstance(data, list)
             assert all("id" in player and "name" in player for player in data)
 
 
+
 @pytest.mark.asyncio
 async def test_get_player_by_unexisted_player_id():
     """
-    Test GET /v0/players/?player_id=<uuid>, which <uuid> is an unexisted player_id, returns an 404 Not Found Error.
+    Test GET /v0/players/?player_id=<uuid> with a non-existent player_id returns 404.
     """
-    base_url = NGROK_ENDPOINT
-
-    # Use a known player UUID from your DB
-    player_id = "b3e7bc1e-04de-4b2d-a5e0-5dc29a3c13b5"  # replace with real one
-
+    player_id = "b3e7bc1e-04de-4b2d-a5e0-5dc29a3c13b5"  # replace with a non-existent player_id
     async with ClientSession() as session:
-        async with session.get(f"{base_url}/v0/players/", params={"player_id": player_id}) as response:
+        async with session.get(f"{base_url}/v0/players/", params={"player_id": player_id}, headers=headers) as response:
             assert response.status == 404
+
 
 
 @pytest.mark.asyncio
 async def test_get_player_by_existed_player_id():
     """
-    Test GET /v0/players/?player_id=<uuid>, which <uuid> is an existed player_id, returns a player.
+    Test GET /v0/players/?player_id=<uuid> with an existing player_id returns a player object.
     """
-    base_url = NGROK_ENDPOINT
-
-    # Use a known player UUID from your DB
-    player_id = "b3e7bc1e-04de-4b2d-a5e0-5dc29a3c13b5"  # replace with real one
-
+    player_id = "b3e7bc1e-04de-4b2d-a5e0-5dc29a3c13b5"  # replace with an existing player_id
     async with ClientSession() as session:
-        async with session.get(f"{base_url}/v0/players/", params={"player_id": player_id}) as response:
+        async with session.get(f"{base_url}/v0/players/", params={"player_id": player_id}, headers=headers) as response:
             assert response.status == 200
             data = await response.json()
             assert isinstance(data, dict)
@@ -55,36 +54,29 @@ async def test_get_player_by_existed_player_id():
             assert "name" in data
 
 
+
 @pytest.mark.asyncio
 async def test_get_player_by_unexisted_player_code():
     """
-    Test GET /v0/players/player-code/{player_code}, which {player_code} is an unexisted player_code, returns an 404 Not Found Error.
+    Test GET /v0/players/player-code/{player_code} with a non-existent player_code returns 404.
     """
-    base_url = NGROK_ENDPOINT
-
-    # Use a known player code from your DB
-    player_code = "GLO_P_99"  # replace with real one
-
+    player_code = "GLO_P_99"  # replace with a non-existent player_code
     async with ClientSession() as session:
-        async with session.get(f"{base_url}/v0/players/player-code/{player_code}") as response:
+        async with session.get(f"{base_url}/v0/players/player-code/{player_code}", headers=headers) as response:
             assert response.status == 404
 
 
 
 @pytest.mark.asyncio
-async def test_get_player_by_unexisted_player_code():
+async def test_get_player_by_existed_player_code():
     """
-    Test GET /v0/players/player-code/{player_code}, which {player_code} is an existed player_code, returns a player.
+    Test GET /v0/players/player-code/{player_code} with an existing player_code returns a player object.
     """
-    base_url = NGROK_ENDPOINT
-
-    # Use a known player code from your DB
-    player_code = "GLO_P_01"  # replace with real one
-
+    player_code = "GLO_P_01"  # replace with an existing player_code
     async with ClientSession() as session:
-        async with session.get(f"{base_url}/v0/players/player-code/{player_code}") as response:
+        async with session.get(f"{base_url}/v0/players/player-code/{player_code}", headers=headers) as response:
             assert response.status == 200
             data = await response.json()
             assert isinstance(data, dict)
             assert data["player_code"] == player_code
-            assert "name" in data
+            assert "player_name" in data

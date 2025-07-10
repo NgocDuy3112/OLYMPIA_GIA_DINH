@@ -1,3 +1,8 @@
+"""
+Tests for the answer API endpoints.
+Covers creating an answer and retrieving the last 3 answers.
+"""
+
 import pytest
 from aiohttp import ClientSession
 from decimal import Decimal
@@ -7,12 +12,16 @@ from app.schema.v0.answer import AnswerSchema
 from tests.configs import NGROK_ENDPOINT
 
 
+
+base_url = NGROK_ENDPOINT
+headers = {'Content-Type': 'application/json; charset=utf-8'}
+
+
 @pytest.mark.asyncio
 async def test_create_answer():
     """
     Test creating an answer returns 200 and includes the answer in the response list.
     """
-    base_url = NGROK_ENDPOINT
     payload = AnswerSchema(
         index=1,
         name="TestUser",
@@ -20,23 +29,19 @@ async def test_create_answer():
         time=Decimal("30.000")
     )
     async with ClientSession() as session:
-        headers = {'Content-Type': 'application/json; charset=utf-8'}
         async with session.post(f"{base_url}/v0/answers/", json=payload.model_dump(mode="json"), headers=headers) as response:
             assert response.status == 200
             data = await response.json()
             assert isinstance(data, list)
             assert any(item.get("answer") == "Sample Answer" for item in data)
 
-
 @pytest.mark.asyncio
 async def test_get_answers_limit():
     """
     Test retrieving answers returns last 3 answers with correct structure.
     """
-    base_url = NGROK_ENDPOINT
     answer.answers.clear()  # clear in-memory list before test
     async with ClientSession() as session:
-        headers = {'Content-Type': 'application/json; charset=utf-8'}
         for i in range(5):
             payload = AnswerSchema(
                 index=(i % 3) + 1,

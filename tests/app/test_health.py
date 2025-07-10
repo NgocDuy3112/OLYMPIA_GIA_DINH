@@ -5,12 +5,17 @@ from app.main import app
 from tests.configs import NGROK_ENDPOINT
 
 
+base_url = NGROK_ENDPOINT
 
-@pytest.mark_asyncio
+
+
+@pytest.mark.asyncio
 async def test_health():
-    base_url = NGROK_ENDPOINT
+    """
+    Testing if when server is healthy by checking the status code and the json content.
+    """
+    headers = {'Content-Type': 'application/json; charset=utf-8'}
     async with ClientSession() as session:
-        headers = {'Content-Type': 'application/json; charset=utf-8'}
         async with session.get(f"{base_url}/health/", headers=headers) as response:
             assert response.status == 200
             assert response.json() == {"status": "ok"}
