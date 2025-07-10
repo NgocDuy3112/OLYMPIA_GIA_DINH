@@ -1,5 +1,5 @@
 from groq import Groq
-from src.assistant.configs import GROQ_API_KEY, MODEL_NAME
+from src.agent.configs import GROQ_API_KEY, MODEL_NAME
 
 
 class GroqClient:

@@ -69,7 +69,7 @@ services:
     build:
       context: ./src/app
     working_dir: /
-    command: sh -c "pytest tests/app --maxfail=1 --disable-warnings -v"
+    command: sh -c "pytest tests/app --maxfail=1 --disable-warnings -v --cache-dir=/tmp/pytest_cache"
     environment:
       - PYTHONPATH=/src
     volumes:

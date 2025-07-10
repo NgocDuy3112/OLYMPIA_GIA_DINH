@@ -1,5 +1,5 @@
 from groq_client import GroqClient
-from assistant.schema.v0.message import Message
+from agent.schema.v0.message import Message
 
 
 

@@ -9,7 +9,7 @@ It uses **Docker** for containerization and **PostgreSQL** for data storage, pro
 
 ## ✨ Features
 
-- **Modular Architecture** – Clear separation into `src`, `assistant`, and `ocbot` modules.
+- **Modular Architecture** – Clear separation into `src`, `agent`, and `ocbot` modules.
 - **RESTful APIs** – Versioned API endpoints for maintainability.
 - **Database Integration** – PostgreSQL with configuration and SQL scripts.
 - **Media & Data Management** – Supports audio, video, images, PDFs, and tabular data.
@@ -23,8 +23,9 @@ It uses **Docker** for containerization and **PostgreSQL** for data storage, pro
 
 ```
 ├── src/              # Main application code: APIs, services, models, utils
-├── assistant/        # Assistant services (chat, prompt management, etc.)
-├── ocbot/            # Bot automation utilities
+   ├── app/              # Main endpoints
+   ├── agent/            # Agent services (chat, prompt management, etc.)
+   ├── ocbot/            # Bot automation utilities
 ├── data/             # Media, PDFs, database files, tabular data
 ├── sql/              # SQL scripts for DB setup and migration
 ├── notebooks/        # Jupyter notebooks for data analysis
@@ -80,7 +81,7 @@ To install dependencies for each service:
 ```bash
 pip install -r <service>/requirements.txt
 ```
-Where `<service>` can be **app**, **assistant**, or **glorybot**.
+Where `<service>` can be **app**, **agent**, or **ocbot**.
 
 ---
 
