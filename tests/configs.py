@@ -1,1 +1,0 @@
-NGROK_ENDPOINT="https://helped-allowing-mudfish.ngrok-free.app"

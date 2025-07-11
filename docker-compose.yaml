@@ -44,6 +44,25 @@ services:
       - production
       - tests
 
+  agent:
+    container_name: agent
+    build:
+      context: ./src/app
+    environment:
+      - PYTHONPATH=/src
+    working_dir: /src/app
+    command: sh -c "uvicorn main:app --reload --host 0.0.0.0 --port 8001"
+    volumes:
+      - ./src/app:/src/app
+    ports:
+      - "8000:8000"
+    networks:
+      - olympia-custom-network
+    restart: always
+    profiles:
+      # - production
+      - test
+
   ocbot:
     container_name: ocbot
     build:
@@ -55,7 +74,7 @@ services:
     volumes:
       - ./src/ocbot:/src/ocbot
       - ./sounds:/src/sounds
-      - ./configs/.env.ocbot:/src/configs/.env.ocbot
+      - ./configs/.env.ocbot:/src/configs/.env
     depends_on:
       - fastapi
     networks:
