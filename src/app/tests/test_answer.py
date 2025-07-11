@@ -9,11 +9,11 @@ from decimal import Decimal
 
 from app.api.v0 import answer
 from app.schema.v0.answer import AnswerSchema
-from tests.configs import NGROK_ENDPOINT
+from tests.configs import URL
 
 
 
-base_url = NGROK_ENDPOINT
+base_url = URL
 headers = {'Content-Type': 'application/json; charset=utf-8'}
 
 

@@ -6,11 +6,11 @@ Covers GET, POST, PUT, and DELETE operations for player records.
 import pytest
 from aiohttp import ClientSession
 from uuid import uuid4
-from tests.configs import NGROK_ENDPOINT
+from tests.configs import URL
 
 
 
-base_url = NGROK_ENDPOINT
+base_url = URL
 headers = {'Content-Type': 'application/json; charset=utf-8'}
 
 

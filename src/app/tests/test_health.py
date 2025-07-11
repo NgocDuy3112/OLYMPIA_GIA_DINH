@@ -2,10 +2,10 @@ import pytest
 from aiohttp import ClientSession
 
 from app.main import app
-from tests.configs import NGROK_ENDPOINT
+from tests.configs import URL
 
 
-base_url = NGROK_ENDPOINT
+base_url = URL
 
 
 

@@ -5,10 +5,10 @@ Covers GET operations for all leaderboard types.
 
 import pytest
 from aiohttp import ClientSession
-from tests.configs import NGROK_ENDPOINT
+from tests.configs import URL
 
 
-base_url = NGROK_ENDPOINT
+base_url = URL
 headers = {'Content-Type': 'application/json; charset=utf-8'}
 
 
