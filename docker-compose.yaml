@@ -81,7 +81,7 @@ services:
       - ENV_FILE=/src/configs/.env
       - PYTHONPATH=/src
     depends_on:
-      - fastapi
+      - app
     networks:
       - olympia-custom-network
     restart: always
