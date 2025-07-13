@@ -1,4 +1,4 @@
-FROM python:alpine
+FROM python:3.11-alpine
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -8,7 +8,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     FFMPEG_PATH=/usr/bin/ffmpeg \
     PYTHONFAULTHANDLER=1
 
-WORKDIR /glorybot
+WORKDIR /ocbot
 
 # Install system dependencies using apk
 RUN apk add --no-cache \
@@ -31,7 +31,7 @@ COPY . .
 # Create a non-root user and set permissions
 RUN mkdir -p /sounds/opus && \
     adduser -D botuser && \
-    chown -R botuser:botuser /glorybot /sounds && \
+    chown -R botuser:botuser /ocbot /sounds && \
     chmod -R 777 /sounds/opus  
 # Ensure write permissions for /sounds/opus directory
 
