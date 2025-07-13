@@ -5,7 +5,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-WORKDIR /app
+WORKDIR /src/app
 
 # Copy requirements first for better caching
 COPY requirements.txt .
@@ -17,6 +17,6 @@ RUN apk add --no-cache curl && \
 # Copy the rest of the application
 COPY . .
 
-RUN chmod +x /app/entrypoint.sh
+RUN chmod +x /src/app/entrypoint.sh
 
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/src/app/entrypoint.sh"]

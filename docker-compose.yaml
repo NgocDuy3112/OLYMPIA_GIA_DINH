@@ -22,17 +22,18 @@ services:
       - production
       - developer
 
-  fastapi:
-    container_name: fastapi
+  app:
+    container_name: app
     build:
       context: ./src/app
-    environment:
-      - PYTHONPATH=/src
     working_dir: /src/app
     entrypoint: /src/app/entrypoint.sh
     volumes:
       - ./src/app:/src/app
       - ./configs/.env.app:/src/configs/.env
+    environment:
+      - ENV_FILE=/src/configs/.env
+      - PYTHONPATH=/src
     ports:
       - "8000:8000"
     depends_on:
@@ -40,7 +41,7 @@ services:
         condition: service_healthy
     networks:
       - olympia-custom-network
-    restart: always
+    restart: unless-stopped
     profiles:
       - production
       - developer
@@ -49,15 +50,16 @@ services:
     container_name: agent
     build:
       context: ./src/agent
-    environment:
-      - PYTHONPATH=/src
     working_dir: /src/agent
     entrypoint: /src/agent/entrypoint.sh
     volumes:
       - ./src/agent:/src/agent
       - ./configs/.env.agent:/src/configs/.env
+    environment:
+      - ENV_FILE=/src/configs/.env
+      - PYTHONPATH=/src
     ports:
-      - "8000:8000"
+      - "8001:8001"
     networks:
       - olympia-custom-network
     restart: always
@@ -69,14 +71,15 @@ services:
     container_name: ocbot
     build:
       context: ./src/ocbot
-    environment:
-      - PYTHONPATH=/src
     working_dir: /src/ocbot
     command: sh -c "python main.py"
     volumes:
       - ./src/ocbot:/src/ocbot
       - ./sounds:/src/sounds
       - ./configs/.env.ocbot:/src/configs/.env
+    environment:
+      - ENV_FILE=/src/configs/.env
+      - PYTHONPATH=/src
     depends_on:
       - fastapi
     networks:
