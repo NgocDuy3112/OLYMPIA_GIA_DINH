@@ -3,7 +3,7 @@ from typing import Union, Callable, Awaitable, Literal
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.dependencies import get_postgresql_async_session
-from app.service.v0.leaderboard import *
+from app.core.v0.leaderboard import *
 
 LeaderboardLiteral = Literal['yellow', 'white', 'red', 'pink', 'blue', 'orange', 'green', 'team']
 LeaderboardCallable = Callable[[AsyncSession], Awaitable[LeaderboardSchema]]

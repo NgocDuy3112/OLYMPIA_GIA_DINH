@@ -1,4 +1,4 @@
-from bot_commands import *
+from src.ocbot.v0.bot_commands import *
 
 
 if __name__ == "__main__":

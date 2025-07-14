@@ -1,4 +1,4 @@
-from ocbot.helpers import *
+from src.ocbot.v0.helpers import *
 
 from ocbot.v0.controller.kd_c import KhoiDongControllerView
 from ocbot.v0.controller.vcnv_c import VuotChuongNgaiVatControllerView
@@ -9,7 +9,7 @@ from ocbot.v0.view.kd_v import KhoiDongView
 from ocbot.v0.view.vcnv_v import VuotChuongNgaiVatView
 from ocbot.v0.view.vd_v import VeDichView
 
-from ocbot import global_states
+from src.ocbot.v0 import global_states
 
 
 class ControllerView(View):

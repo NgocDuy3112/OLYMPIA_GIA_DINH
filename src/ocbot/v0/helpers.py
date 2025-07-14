@@ -1,9 +1,9 @@
 from aiohttp import ClientSession
 import asyncio
 
-from ocbot import global_states
+from src.ocbot.v0 import global_states
 from ocbot.utils import *
-from ocbot.configs import NGROK_ENDPOINT
+from src.ocbot.v0.configs import NGROK_ENDPOINT
 from pydantic import BaseModel, Field
 from decimal import Decimal
 from typing import Annotated

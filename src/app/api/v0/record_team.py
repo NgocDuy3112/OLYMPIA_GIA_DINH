@@ -4,7 +4,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.dependencies import get_postgresql_async_session
-from app.service.v0 import record_team
+from app.core.v0 import record_team
 
 
 v0_router = APIRouter(prefix="/v0/team-records", tags=['Team''s Records - GLORYTEAM'])
