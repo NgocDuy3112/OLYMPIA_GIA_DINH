@@ -5,15 +5,15 @@ services:
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: gloryteam
+      POSTGRES_DB: ogd
     networks:
       - olympia-custom-network
     volumes:
-      - ./data/postgresql/gloryteam:/var/lib/postgresql/data
+      - ./data/postgresql/ogd:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d gloryteam"]
+      test: ["CMD-SHELL", "pg_isready -U user -d ogd"]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -59,12 +59,12 @@ services:
       - ENV_FILE=/src/configs/.env
       - PYTHONPATH=/src
     ports:
-      - "8001:8001"
+      - "8001:8000"
     networks:
       - olympia-custom-network
     restart: always
     profiles:
-      # - production
+      - production
       - developer
 
   ocbot:
@@ -87,6 +87,7 @@ services:
     restart: always
     profiles:
       - production
+      - developer
 
 networks:
   olympia-custom-network:
