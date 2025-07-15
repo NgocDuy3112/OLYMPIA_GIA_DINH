@@ -67,16 +67,16 @@ services:
       - production
       - developer
 
-  ocbot:
-    container_name: ocbot
+  ogdbot:
+    container_name: ogdbot
     build:
-      context: ./src/ocbot
-    working_dir: /src/ocbot
+      context: ./src/ogdbot
+    working_dir: /src/ogdbot
     command: sh -c "python main.py"
     volumes:
-      - ./src/ocbot:/src/ocbot
+      - ./src/ogdbot:/src/ogdbot
       - ./sounds:/src/sounds
-      - ./configs/.env.ocbot:/src/configs/.env
+      - ./configs/.env.ogdbot:/src/configs/.env
     environment:
       - ENV_FILE=/src/configs/.env
       - PYTHONPATH=/src

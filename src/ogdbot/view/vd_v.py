@@ -1,5 +1,5 @@
-from src.ocbot.v0.helpers import *
-from src.ocbot.v0 import global_states
+from src.ogdbot.v0.helpers import *
+from src.ogdbot.v0 import global_states
 
 
 class VeDichView(View):
