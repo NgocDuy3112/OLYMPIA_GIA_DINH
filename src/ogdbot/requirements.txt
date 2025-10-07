@@ -1,5 +1,0 @@
-discord[voice]
-aiohttp
-python-dotenv
-PyNaCl
-pydantic
