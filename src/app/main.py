@@ -10,10 +10,10 @@ from app.api.v0 import (
     team, 
     player, 
     bonus, 
-    record_player, 
     record_team,
     leaderboard
 )
+from src.app.api.v0 import record
 
 
 @asynccontextmanager
@@ -62,7 +62,7 @@ app.include_router(leaderboard.v0_router)
 app.include_router(answer.v0_router)
 app.include_router(team.v0_router)
 app.include_router(player.v0_router)
-app.include_router(record_player.v0_router)
+app.include_router(record.v0_router)
 app.include_router(record_team.v0_router)
 app.include_router(bonus.v0_router)
 

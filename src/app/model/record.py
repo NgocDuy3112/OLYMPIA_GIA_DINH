@@ -1,0 +1,34 @@
+from uuid import UUID, uuid4
+from datetime import datetime, timezone
+
+from sqlalchemy import Integer, DateTime, ForeignKey, CheckConstraint
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.db.dependencies import Base
+
+
+def utcnow():
+    return datetime.now(timezone.utc)
+
+
+
+class Record(Base):
+    """
+    SQLAlchemy model representing a record.
+    Inherits from the common declarative Base.
+    """
+    __tablename__ = "records"
+    # Constraints
+    __table_args__ = (
+        CheckConstraint('d_score_earned >= 0', name='check_d_score_earned_non_negative'),
+        CheckConstraint('d_score_earned % 5 = 0', name='check_d_score_earned_multiple_of_5'),
+    )
+    # Columns
+    id: Mapped[UUID] = mapped_column(primary_key=True, default_factory=uuid4)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    d_score_earned: Mapped[int] = mapped_column(Integer())
+
+    # Foreign Keys
+    player_id: Mapped[UUID] = mapped_column(ForeignKey("players.id"), nullable=False)
+    match_id: Mapped[UUID] = mapped_column(ForeignKey("matches.id"), nullable=False)

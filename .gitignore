@@ -7,6 +7,9 @@ sql
 docker-compose-testing.yaml
 
 .DS_Store
+.python-version
+pyproject.yaml
+uv.lock
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
