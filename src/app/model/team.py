@@ -26,4 +26,4 @@ class Team(Base):
     team_name: Mapped[str] = mapped_column(String(length=25))
 
     # Relationships
-    players: Mapped[list["Player"]] = relationship(back_populates="team", cascade="all, delete-orphan") # type: ignore
+    players: Mapped[list["Player"]] = relationship(back_populates="teams", cascade="all, delete-orphan") # type: ignore

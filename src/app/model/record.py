@@ -2,7 +2,7 @@ from uuid import UUID, uuid4
 from datetime import datetime, timezone
 
 from sqlalchemy import Integer, DateTime, ForeignKey, CheckConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.dependencies import Base
 
@@ -32,3 +32,7 @@ class Record(Base):
     # Foreign Keys
     player_id: Mapped[UUID] = mapped_column(ForeignKey("players.id"), nullable=False)
     match_id: Mapped[UUID] = mapped_column(ForeignKey("matches.id"), nullable=False)
+
+    # Relationships
+    player: Mapped["Player"] = relationship(back_populates='records') # type: ignore
+    matches: Mapped[list["Match"]] = relationship(back_populates='records') # type: ignore

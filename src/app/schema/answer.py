@@ -4,6 +4,7 @@ from base import BaseRequest, BaseResponse
 
 class PostAnswerRequest(BaseRequest):
     player_code: str
+    match_code: str
     content: str
     timestamp: float
 
@@ -20,6 +21,4 @@ class GetAnswerRequest(BaseRequest):
 
 
 class GetAnswerResponse(BaseResponse):
-    player_code: str
-    content: str
-    timestamp: float
+    pass

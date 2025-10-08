@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Any
 from pydantic import BaseModel
 from datetime import datetime, timezone
 
@@ -9,11 +9,9 @@ def utcnow():
 
 
 class BaseRequest(BaseModel):
-    request_at: datetime = utcnow()
+    pass
 
 
 
 class BaseResponse(BaseModel):
-    response_at: datetime = utcnow()
-    status: Literal['success', 'error']
-    detail: str | None = None # For error
+    response: dict[str, Any] | None = None

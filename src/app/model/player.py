@@ -1,11 +1,10 @@
 from uuid import UUID, uuid4
 from datetime import datetime, timezone
 
-from sqlalchemy import String, DateTime, ForeignKey, CheckConstraint, select, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship, column_property
+from sqlalchemy import String, DateTime, ForeignKey, CheckConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.dependencies import Base
-from app.model.record import Record
 
 
 def utcnow():
@@ -30,7 +29,10 @@ class Player(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
     player_code: Mapped[str] = mapped_column(String(length=5), unique=True)
     player_name: Mapped[str] = mapped_column(String(length=25))
+
     # Foreign Keys
     team_id: Mapped[UUID] = mapped_column(ForeignKey("teams.id"), nullable=False)
+
     # Relationships
     team: Mapped["Team"] = relationship(back_populates="players") # type: ignore
+    records: Mapped[list["Record"]] = relationship(back_populates="players") # type: ignore

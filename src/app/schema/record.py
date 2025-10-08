@@ -3,6 +3,7 @@ from base import BaseRequest, BaseResponse
 
 
 class PostRecordRequest(BaseRequest):
+    match_code: str
     player_code: str
     d_score_earned: int
 
@@ -13,11 +14,15 @@ class PostRecordResponse(BaseResponse):
 
 
 
-class GetRecordRequest(BaseRequest):
+class GetRecordsByMatchRequest(BaseRequest):
+    match_code: str
+
+
+
+class GetRecordsByPlayerRequest(BaseRequest):
     player_code: str
 
 
 
-class GetRecordResopnse(BaseResponse):
-    player_code: str
-    d_score_earned: int
+class GetRecordsResponse(BaseResponse):
+    pass
