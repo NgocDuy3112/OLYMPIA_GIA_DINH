@@ -1,4 +1,4 @@
-from base import BaseRequest, BaseResponse
+from app.schema.base import BaseRequest, BaseResponse
 
 
 
@@ -11,16 +11,6 @@ class PostRecordRequest(BaseRequest):
 
 class PostRecordResponse(BaseResponse):
     pass
-
-
-
-class GetRecordsByMatchRequest(BaseRequest):
-    match_code: str
-
-
-
-class GetRecordsByPlayerRequest(BaseRequest):
-    player_code: str
 
 
 

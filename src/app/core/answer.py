@@ -66,16 +66,24 @@ async def get_all_answers_from_match_code_from_db(match_code: str, session: Asyn
         answers_query = (
             select(Answer)
             .options(joinedload(Answer.player))
-            .join(Answer.player)
-            .where(Answer.match_id == match_id))
+            .where(Answer.match_id == match_id)
+            .order_by(Answer.timestamp.desc())
+        )
         execution = await session.execute(answers_query)
         result = execution.scalars()
+        answers = [
+            {
+                'content': res.content,
+                'timestamp': res.timestamp.isoformat(),
+                'player_code': res.player.player_code,
+            }
+            for res in result
+        ]
         return GetAnswerResponse(
             response={
                 'data': {
                     'match_code': match_code,
-                    'player_code': result.player.player_code,
-                    'answers': []
+                    'answers': answers
                 }
             }
         )

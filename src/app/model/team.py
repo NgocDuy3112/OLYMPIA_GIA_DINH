@@ -1,7 +1,7 @@
-from uuid import UUID, uuid4
+import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import String, DateTime
+from sqlalchemy import String, DateTime, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.dependencies import Base
@@ -19,7 +19,7 @@ class Team(Base):
     """
     __tablename__ = "teams"
     # Columns
-    id: Mapped[UUID] = mapped_column(primary_key=True, default_factory=uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
     team_code: Mapped[str] = mapped_column(String(length=5), unique=True)

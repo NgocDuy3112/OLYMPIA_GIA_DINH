@@ -1,4 +1,4 @@
-from base import BaseRequest, BaseResponse
+from app.schema.base import BaseRequest, BaseResponse
 
 
 
@@ -12,11 +12,6 @@ class PostAnswerRequest(BaseRequest):
 
 class PostAnswerResponse(BaseResponse):
     pass
-
-
-
-class GetAnswerRequest(BaseRequest):
-    player_code: str
 
 
 

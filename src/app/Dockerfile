@@ -1,9 +1,18 @@
-FROM python:alpine
+FROM python:3.11-alpine
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
+
+RUN apk add --no-cache \
+    build-base \
+    rust \
+    cargo \
+    python3-dev \
+    curl \
+    # Clean up the APK cache to reduce this stage's layer size
+    && rm -rf /var/cache/apk/*
 
 WORKDIR /src/app
 

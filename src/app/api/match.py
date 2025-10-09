@@ -1,0 +1,50 @@
+from fastapi import APIRouter, Depends
+
+from app.db.dependencies import get_db
+from app.schema.match import *
+from app.core.match import *
+
+
+match_router = APIRouter(prefix='/matches', tags=['Matches - Olympia Gia Định 3'])
+
+
+
+@match_router.post(
+    "/",
+    response_model=PostMatchResponse,
+    responses={
+        200: {'model': PostMatchResponse, 'description': 'Successfully upload a match'},
+        404: {'description': 'Not Found'},
+        500: {'description': 'Internal Server Error'}
+    }
+)
+async def post_match(request: PostMatchRequest, session: AsyncSession=Depends(get_db)):
+    return await post_match_to_db(request, session)
+
+
+
+@match_router.get(
+    "/",
+    response_model=GetMatchResponse,
+    responses={
+        200: {'model': GetMatchResponse, 'description': 'Successfully get all the matches'},
+        404: {'description': 'Not Found'},
+        500: {'description': 'Internal Server Error'}
+    }
+)
+async def get_all_matches(session: AsyncSession=Depends(get_db)):
+    return await get_all_matches_from_db(session)
+
+
+
+@match_router.get(
+    "/{match_code}",
+    response_model=GetMatchResponse,
+    responses={
+        200: {'model': GetMatchResponse, 'description': 'Successfully get the match'},
+        404: {'description': 'Not Found'},
+        500: {'description': 'Internal Server Error'}
+    }
+)
+async def get_match_from_match_code(match_code: str, session: AsyncSession=Depends(get_db)):
+    return await get_match_from_match_code_from_db(match_code, session)

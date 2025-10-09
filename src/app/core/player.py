@@ -43,7 +43,7 @@ async def get_all_players_from_db(session: AsyncSession) -> GetPlayerResponse:
 
 
 
-async def get_player_from_db(
+async def get_player_from_player_code_from_db(
     player_code: str, 
     session: AsyncSession
 ) -> GetPlayerResponse:

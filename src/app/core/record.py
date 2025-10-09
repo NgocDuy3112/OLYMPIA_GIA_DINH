@@ -49,19 +49,19 @@ async def post_record_to_db(request: PostRecordRequest, session: AsyncSession) -
 
 
 
-async def get_all_records_by_player_from_db(player_code: str, session: AsyncSession) -> GetRecordsResponse:
+async def get_all_records_from_player_code_from_db(player_code: str, session: AsyncSession) -> GetRecordsResponse:
     try:
-        player_id_query = select(Player.id).where(Player.player_code == player_code)
-        execution = await session.execute(player_id_query)
-        player_id = execution.scalar_one_or_none()
-        if player_id is None:
+        player_query = select(Player.id).where(Player.player_code == player_code)
+        execution = await session.execute(player_query)
+        player_found = execution.scalar_one_or_none()
+        if player_found is None:
             raise HTTPException(
                 status_code=404,
                 detail=f'Player with player_code={player_code} not found!'
             )
         records_query = (
             select(Record)
-            .where(Record.player_id == player_id)
+            .where(Record.player_id == player_found.player_id)
             .options(joinedload(Record.player))
             .order_by(Record.created_at.desc())
         )
@@ -70,8 +70,8 @@ async def get_all_records_by_player_from_db(player_code: str, session: AsyncSess
         return GetRecordsResponse(
             response={
                 'data': {
-                    'player_code': result.player_code,
-                    'player_name': result.player_name,
+                    'player_code': player_found.player_code,
+                    'player_name': player_found.player_name,
                     'records': [
                         {
                             'match_code': record.match_code,
@@ -80,6 +80,49 @@ async def get_all_records_by_player_from_db(player_code: str, session: AsyncSess
                         } 
                         for record in result.records
                     ]
+                }
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f'An unexpected error occured: {e.__class__.__name__}'
+        )
+
+
+
+async def get_all_records_from_match_code_from_db(match_code: str, session: AsyncSession) -> GetRecordsResponse:
+    try:
+        match_query = select(Match).where(Match.match_code == match_code)
+        execution = await session.execute(match_query)
+        match_found = execution.scalar_one_or_none()
+        if match_found is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f'Player with player_code={match_code} not found!'
+            )
+        records_query = (
+            select(Record)
+            .where(Record.match_id == match_found.match_id)
+            .options(joinedload(Record.matches))
+            .order_by(Record.created_at.desc())
+        )
+        execution = await session.execute(records_query)
+        result = execution.scalars().all()
+        return GetRecordsResponse(
+            response={
+                'data': {
+                    'match_code': match_found.match_code,
+                    'match_name': match_found.match_name,
+                    'records': [
+                        {
+                            'player_code': record.player_code,
+                            'd_score_earned': record.d_score_earned,
+                            'updated_at': record.updated_at
+                        }
+                    for record in result.records]
                 }
             }
         )

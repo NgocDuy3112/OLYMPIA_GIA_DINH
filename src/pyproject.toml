@@ -10,6 +10,7 @@ dependencies = [
     "discord[voice]>=2.3.2",
     "fastapi[standard]>=0.118.0",
     "pydantic>=2.11.10",
+    "pydantic-settings>=2.11.0",
     "pynacl>=1.6.0",
     "pytest>=8.4.2",
     "pytest-asyncio>=1.2.0",

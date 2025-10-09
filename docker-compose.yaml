@@ -3,18 +3,17 @@ services:
     container_name: postgresql
     image: postgres:17.5-bullseye
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: ogd
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=ogd3
     networks:
-      - olympia-custom-network
+      - ogd3-network
     volumes:
-      - ./data/postgresql/ogd:/var/lib/postgresql/data
+      - ./data/postgresql/ogd3:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d ogd"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ogd3"]
+      interval: 30s
       timeout: 10s
       retries: 5
     restart: always
@@ -40,7 +39,7 @@ services:
       postgresql:
         condition: service_healthy
     networks:
-      - olympia-custom-network
+      - ogd3-network
     restart: unless-stopped
     profiles:
       - production
@@ -61,34 +60,31 @@ services:
     ports:
       - "8001:8000"
     networks:
-      - olympia-custom-network
+      - ogd3-network
     restart: always
     profiles:
       - production
-      - developer
 
-  ogdbot:
-    container_name: ogdbot
+  bot:
+    container_name: bot
     build:
-      context: ./src/ogdbot
-    working_dir: /src/ogdbot
+      context: ./src/bot
+    working_dir: /src/bot
     command: sh -c "python main.py"
     volumes:
-      - ./src/ogdbot:/src/ogdbot
+      - ./src/bot:/src/bot
       - ./sounds:/src/sounds
-      - ./configs/.env.ogdbot:/src/configs/.env
+      - ./configs/.env.bot:/src/configs/.env
     environment:
       - ENV_FILE=/src/configs/.env
       - PYTHONPATH=/src
-    depends_on:
-      - app
     networks:
-      - olympia-custom-network
+      - ogd3-network
     restart: always
     profiles:
       - production
-      - developer
+
 
 networks:
-  olympia-custom-network:
+  ogd3-network:
     driver: bridge

@@ -4,3 +4,4 @@ sqlmodel
 pytest
 pytest-asyncio
 aiohttp
+pydantic_settings

@@ -51,7 +51,7 @@ async def get_all_teams_from_db(session: AsyncSession):
 
 
 
-async def get_team_from_db(team_code: str, session: AsyncSession):
+async def get_team_from_team_code_from_db(team_code: str, session: AsyncSession):
     try:
         team_query = (
             select(Team)
