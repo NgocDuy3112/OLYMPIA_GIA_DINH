@@ -5,7 +5,7 @@ from app.schema.answer import *
 from app.core.answer import *
 
 
-answer_router = APIRouter(prefix='/answers', tags=['Answers - Olympia Gia Định 3'])
+answer_router = APIRouter(prefix='/answers', tags=['Câu trả lời'])
 
 
 

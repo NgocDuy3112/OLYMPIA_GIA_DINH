@@ -9,6 +9,20 @@ player_router = APIRouter(prefix='/players', tags=['Thí sinh'])
 
 
 
+@player_router.post(
+    "/",
+    response_model=PostPlayerResponse,
+    responses={
+        200: {'model': PostPlayerResponse, 'description': 'Successfully post a player'},
+        404: {'description': 'Not Found'},
+        500: {'description': 'Internal Server Error'}
+    }
+)
+async def post_player(request: PostPlayerRequest, session: AsyncSession=Depends(get_db)):
+    return await post_player_to_db(request, session)
+
+
+
 @player_router.get(
     "/",
     response_model=GetPlayerResponse,

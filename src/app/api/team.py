@@ -9,6 +9,20 @@ team_router = APIRouter(prefix='/teams', tags=['Đội chơi'])
 
 
 
+@team_router.post(
+    '/',
+    response_model=PostTeamResponse,
+    responses={
+        200: {'model': PostTeamResponse, 'description': 'Successfully post a team'},
+        404: {'description': 'Not Found'},
+        500: {'description': 'Internal Server Error'}
+    }
+)
+async def post_team(request: PostTeamRequest, session: AsyncSession=Depends(get_db)):
+    return await post_team_to_db(request, session)
+
+
+
 @team_router.get(
     "/",
     response_model=GetTeamResponse,

@@ -5,7 +5,39 @@ from sqlalchemy.orm import joinedload
 from fastapi import HTTPException
 
 from app.model.player import Player
+from app.model.team import Team
 from app.schema.player import *
+
+
+
+async def post_player_to_db(request: PostPlayerRequest, session: AsyncSession) -> PostPlayerResponse:
+    try:
+        team_id_query = select(Team.id).where(Team.team_code == request.team_code)
+        execution = await session.execute(team_id_query)
+        team_id = execution.unique().scalar_one_or_none()
+        if team_id is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f'Team with team_code={request.team_code} not found'
+            )
+        new_player = Player(
+            player_code=request.player_code,
+            player_name=request.player_name,
+            team_id=team_id
+        )
+        session.add(new_player)
+        await session.commit()
+        await session.refresh(new_player)
+        return PostPlayerResponse(
+            response={'messsage': f'Add a player with player_code={request.player_code} in team with team_code={request.team_code} successfully!'}
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f'An unexpected error occured: {e.__class__.__name__}'
+        )
 
 
 
@@ -17,7 +49,7 @@ async def get_all_players_from_db(session: AsyncSession) -> GetPlayerResponse:
             .join(Player.team)
         )
         execution = await session.execute(players_query)
-        result = execution.scalars()
+        result = execution.unique().scalars().all()
         if result is None:
             raise HTTPException(
                 status_code=404,
@@ -56,7 +88,7 @@ async def get_player_from_player_code_from_db(
         )
         player_query = player_query.where(Player.player_code == player_code)
         execution = await session.execute(player_query)
-        result = execution.scalar_one_or_none()
+        result = execution.unique().scalar_one_or_none()
         if result is None:
             raise HTTPException(
                 status_code=404,

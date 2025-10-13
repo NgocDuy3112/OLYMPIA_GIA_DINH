@@ -9,6 +9,28 @@ from app.schema.team import *
 
 
 
+async def post_team_to_db(request: PostTeamRequest, session: AsyncSession) -> PostTeamResponse:
+    try:
+        new_team = Team(
+            team_code = request.team_code,
+            team_name = request.team_name
+        )
+        session.add(new_team)
+        await session.commit()
+        await session.refresh(new_team)
+        return PostTeamResponse(
+            response={'messsage': f'Add a team with team_code = {request.team_code} successfully!'}
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f'An unexpected error occured: {e}'
+        )
+
+
+
 async def get_all_teams_from_db(session: AsyncSession):
     try:
         teams_query = (
@@ -17,7 +39,7 @@ async def get_all_teams_from_db(session: AsyncSession):
             .join(Team.players)
         )
         execution = await session.execute(teams_query)
-        result = execution.scalars()
+        result = execution.unique().scalars().all()
         if result is None:
             raise HTTPException(
                 status_code=404,
@@ -34,7 +56,7 @@ async def get_all_teams_from_db(session: AsyncSession):
                                 'player_name': p.player_name,
                                 'player_code': p.player_code
                             }
-                        for p in result.players
+                        for p in res.players
                         ]
                     }
                 for res in result
@@ -46,7 +68,7 @@ async def get_all_teams_from_db(session: AsyncSession):
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f'An unexpected error occured: {e.__class__.__name__}'
+            detail=f'An unexpected error occured: {e}'
         )
 
 
@@ -60,7 +82,7 @@ async def get_team_from_team_code_from_db(team_code: str, session: AsyncSession)
         )
         team_query = team_query.where(Team.team_code == team_code)
         execution = await session.execute(team_query)
-        result = execution.scalar_one_or_none()
+        result = execution.unique().scalar_one_or_none()
         if result is None:
             raise HTTPException(
                 status_code=404,
@@ -87,5 +109,5 @@ async def get_team_from_team_code_from_db(team_code: str, session: AsyncSession)
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f'An unexpected error occured: {e.__class__.__name__}'
+            detail=f'An unexpected error occured: {e}'
         )

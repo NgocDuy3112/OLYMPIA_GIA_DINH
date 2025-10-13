@@ -5,6 +5,7 @@ from sqlalchemy import String, DateTime, REAL, UUID, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.dependencies import Base
+from app.model import *
 
 
 def utcnow():
@@ -19,11 +20,11 @@ class Answer(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
     content: Mapped[str] = mapped_column(String, nullable=True)
-    timestamp: Mapped[float] = mapped_column(REAL)
+    timestamp: Mapped[float] = mapped_column(REAL, nullable=True)
     # Foreign Keys
     player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id"), nullable=False)
     match_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("matches.id"), nullable=False)
     question_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("questions.id"), nullable=False)
     # Relationships
-    player: Mapped["Player"] = relationship(back_populates='players') # type: ignore
-    question: Mapped["Question"] = relationship(back_populates='questions') # type: ignore
+    player: Mapped["Player"] = relationship(back_populates='answers') # type: ignore
+    question: Mapped["Question"] = relationship(back_populates='answers') # type: ignore

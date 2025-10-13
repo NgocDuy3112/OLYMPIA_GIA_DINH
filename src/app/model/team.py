@@ -5,6 +5,7 @@ from sqlalchemy import String, DateTime, Boolean, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.dependencies import Base
+from app.model import *
 
 
 def utcnow():
@@ -27,4 +28,4 @@ class Team(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Relationships
-    players: Mapped[list["Player"]] = relationship(back_populates="teams", cascade="all, delete-orphan") # type: ignore
+    players: Mapped[list["Player"]] = relationship(back_populates="team", cascade="all, delete-orphan") # type: ignore

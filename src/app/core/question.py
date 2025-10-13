@@ -28,9 +28,9 @@ def convert_sheet_name_to_round_code(sheet_name: str) -> str:
 
 async def post_question_to_db(request: PostQuestionRequest, session: AsyncSession) -> PostQuestionResponse:
     try:
-        match_id_query = select(Match).where(Match.match_code == request.match_code)
+        match_id_query = select(Match.id).where(Match.match_code == request.match_code)
         execution = await session.execute(match_id_query)
-        match_id = execution.scalar_one_or_none()
+        match_id = execution.unique().scalar_one_or_none()
         if match_id is None:
             raise HTTPException(
                 status_code=404,
@@ -76,7 +76,7 @@ async def post_questions_file_to_db(file: UploadFile, session: AsyncSession) -> 
         match_code = original_filename.split(".")[0].split("_")[1]
         match_id_query = select(Match.id).where(Match.match_code == match_code)
         execution = await session.execute(match_id_query)
-        match_id = execution.scalar_one_or_none()
+        match_id = execution.unique().scalar_one_or_none()
         if match_id is None:
             raise HTTPException(
                 status_code=404,
@@ -134,7 +134,7 @@ async def get_all_questions_from_match_code_to_excel_file_from_db(match_code: st
         for round_code in round_codes:
             questions_query = select(Question).where(Question.question_code.like(f'{round_code}%'))
             execution = await session.execute(questions_query)
-            questions = execution.scalars().all()
+            questions = execution.unique().scalars().all()
             if len(questions) == 0:
                 raise HTTPException(
                     status_code=404,
@@ -156,7 +156,7 @@ async def get_all_questions_from_match_code_to_excel_file_from_db(match_code: st
                     for question in questions_list
                 ]
                 df = pd.DataFrame(data_for_df)
-                df.to_excel(writer, sheet_name=round_code, index=False)
+                df.to_excel(writer, sheet_name=sheet_name, index=False)
         excel_file_buffer.seek(0)
         # Return the file using StreamingResponse
         # Content-Disposition header tells the browser to download the file and suggests a filename.

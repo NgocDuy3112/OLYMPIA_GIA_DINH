@@ -1,10 +1,11 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import String, DateTime, Boolean, CheckConstraint, UUID
+from sqlalchemy import String, DateTime, Boolean, ForeignKey, CheckConstraint, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.dependencies import Base
+from app.model import *
 
 
 def utcnow():
@@ -26,6 +27,9 @@ class Match(Base):
     match_code: Mapped[str] = mapped_column(String(length=3), unique=True)
     match_name: Mapped[str] = mapped_column(String(length=100), unique=True)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id"), nullable=False)
 
     # Relationships
-    players: Mapped[list["Player"]] = relationship(back_populates="matches") # type: ignore
+    player: Mapped["Player"] = relationship(back_populates="matches") # type: ignore
+    questions: Mapped[list["Question"]] = relationship(back_populates="match") # type: ignore
+    records: Mapped[list["Record"]] = relationship(back_populates='match') # type: ignore

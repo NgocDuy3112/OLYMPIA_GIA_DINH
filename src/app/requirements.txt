@@ -1,6 +1,6 @@
 fastapi[standard]
 asyncpg
-sqlmodel
+sqlalchemy
 pandas
 openpyxl
 pytest

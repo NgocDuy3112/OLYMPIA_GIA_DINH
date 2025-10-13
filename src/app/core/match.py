@@ -35,11 +35,11 @@ async def get_all_matches_from_db(session: AsyncSession) -> GetMatchResponse:
     try:
         matches_query = (
             select(Match)
-            .options(joinedload(Match.players))
-            .join(Match.players)
+            .options(joinedload(Match.player))
+            .join(Match.player)
         )
         execution = await session.execute(matches_query)
-        result = execution.scalars()
+        result = execution.unique().scalars().all()
         return GetMatchResponse(
             response={
                 'data': [
@@ -51,7 +51,7 @@ async def get_all_matches_from_db(session: AsyncSession) -> GetMatchResponse:
                                 'player_name': p.player_name,
                                 'player_code': p.player_code
                             }
-                        for p in result.players
+                        for p in res.players
                         ]
                     }
                 for res in result
@@ -77,7 +77,7 @@ async def get_match_from_match_code_from_db(match_code: str, session: AsyncSessi
             .where(Match.match_code == match_code)
         )
         execution = await session.execute(match_query)
-        result = execution.scalar_one_or_none()
+        result = execution.unique().scalar_one_or_none()
         if result is None:
             raise HTTPException(
                 status_code=404,

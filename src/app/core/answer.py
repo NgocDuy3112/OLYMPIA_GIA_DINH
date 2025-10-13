@@ -15,7 +15,7 @@ async def post_answer_to_db(request: PostAnswerRequest, session: AsyncSession) -
     try:
         player_id_query = select(Player.id).where(Player.player_code == request.player_code)
         execution = await session.execute(player_id_query)
-        player_id = execution.scalar_one_or_none()
+        player_id = execution.unique().scalar_one_or_none()
         if player_id is None:
             raise HTTPException(
                 status_code=404,
@@ -23,7 +23,7 @@ async def post_answer_to_db(request: PostAnswerRequest, session: AsyncSession) -
             )
         match_id_query = select(Match.id).where(Match.match_code == request.match_code)
         execution = await session.execute(match_id_query)
-        match_id = execution.scalar_one_or_none()
+        match_id = execution.unique().scalar_one_or_none()
         if match_id is None:
             raise HTTPException(
                 status_code=404,
@@ -57,7 +57,7 @@ async def get_all_answers_from_match_code_from_db(match_code: str, session: Asyn
     try:
         match_id_query = select(Match.id).where(Match.match_code == match_code)
         execution = await session.execute(match_id_query)
-        match_id = execution.scalar_one_or_none()
+        match_id = execution.unique().scalar_one_or_none()
         if match_id is None:
             raise HTTPException(
                 status_code=404,
@@ -70,7 +70,7 @@ async def get_all_answers_from_match_code_from_db(match_code: str, session: Asyn
             .order_by(Answer.timestamp.desc())
         )
         execution = await session.execute(answers_query)
-        result = execution.scalars()
+        result = execution.unique().scalars().all()
         answers = [
             {
                 'content': res.content,

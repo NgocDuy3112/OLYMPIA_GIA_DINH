@@ -5,6 +5,7 @@ from sqlalchemy import String, DateTime, Boolean, ForeignKey, CheckConstraint, U
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.dependencies import Base
+from app.model import *
 
 
 def utcnow():
@@ -36,4 +37,6 @@ class Player(Base):
 
     # Relationships
     team: Mapped["Team"] = relationship(back_populates="players") # type: ignore
-    records: Mapped[list["Record"]] = relationship(back_populates="players") # type: ignore
+    matches: Mapped[list["Match"]] = relationship(back_populates='player') # type: ignore
+    records: Mapped[list["Record"]] = relationship(back_populates="player") # type: ignore
+    answers: Mapped[list["Answer"]] = relationship(back_populates='player') # type: ignore
