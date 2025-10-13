@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import String, DateTime, CheckConstraint, UUID
+from sqlalchemy import String, DateTime, Boolean, CheckConstraint, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.dependencies import Base
@@ -25,6 +25,7 @@ class Match(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
     match_code: Mapped[str] = mapped_column(String(length=3), unique=True)
     match_name: Mapped[str] = mapped_column(String(length=100), unique=True)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Relationships
     players: Mapped[list["Player"]] = relationship(back_populates="matches") # type: ignore

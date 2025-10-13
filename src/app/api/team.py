@@ -5,7 +5,7 @@ from app.core.team import *
 from app.schema.team import *
 
 
-team_router = APIRouter(prefix='/teams', tags=['Teams - Olympia Gia Định 3'])
+team_router = APIRouter(prefix='/teams', tags=['Đội chơi'])
 
 
 

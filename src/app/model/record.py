@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Integer, DateTime, ForeignKey, CheckConstraint, UUID
+from sqlalchemy import Integer, String, DateTime, Boolean, ForeignKey, CheckConstraint, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.dependencies import Base
@@ -27,7 +27,9 @@ class Record(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
-    d_score_earned: Mapped[int] = mapped_column(Integer())
+    d_score_earned: Mapped[int] = mapped_column(Integer)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    round_code: Mapped[str] = mapped_column(String)
 
     # Foreign Keys
     player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id"), nullable=False)

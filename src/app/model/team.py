@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import String, DateTime, UUID
+from sqlalchemy import String, DateTime, Boolean, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.dependencies import Base
@@ -24,6 +24,7 @@ class Team(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
     team_code: Mapped[str] = mapped_column(String(length=5), unique=True)
     team_name: Mapped[str] = mapped_column(String(length=25))
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Relationships
     players: Mapped[list["Player"]] = relationship(back_populates="teams", cascade="all, delete-orphan") # type: ignore

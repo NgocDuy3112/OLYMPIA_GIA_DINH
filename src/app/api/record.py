@@ -5,7 +5,7 @@ from app.schema.record import *
 from app.core.record import *
 
 
-record_router = APIRouter(prefix='/records', tags=['Records - Olympia Gia Định 3'])
+record_router = APIRouter(prefix='/records', tags=['Diễn biến'])
 
 
 

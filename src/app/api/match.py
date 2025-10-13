@@ -5,7 +5,7 @@ from app.schema.match import *
 from app.core.match import *
 
 
-match_router = APIRouter(prefix='/matches', tags=['Matches - Olympia Gia Định 3'])
+match_router = APIRouter(prefix='/matches', tags=['Trận đấu'])
 
 
 

@@ -1,6 +1,8 @@
 fastapi[standard]
 asyncpg
 sqlmodel
+pandas
+openpyxl
 pytest
 pytest-asyncio
 aiohttp

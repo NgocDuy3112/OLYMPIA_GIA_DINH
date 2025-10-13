@@ -5,7 +5,7 @@ from app.core.player import *
 from app.schema.player import *
 
 
-player_router = APIRouter(prefix='/players', tags=['Players - Olympia Gia Định 3'])
+player_router = APIRouter(prefix='/players', tags=['Thí sinh'])
 
 
 
