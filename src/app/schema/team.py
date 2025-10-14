@@ -15,3 +15,8 @@ class PostTeamResponse(BaseResponse):
 
 class GetTeamResponse(BaseResponse):
     pass
+
+
+
+class DeleteTeamResponse(BaseResponse):
+    pass

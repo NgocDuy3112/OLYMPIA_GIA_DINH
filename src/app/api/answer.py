@@ -15,6 +15,7 @@ answer_router = APIRouter(prefix='/answers', tags=['Câu trả lời'])
     responses={
         200: {'model': PostAnswerResponse, 'description': 'Successfully upload an answer'},
         404: {'description': 'Not Found'},
+        409: {'description': 'There is an existing record'},
         500: {'description': 'Internal Server Error'}
     }
 )

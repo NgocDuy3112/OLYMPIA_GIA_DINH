@@ -4,6 +4,6 @@ sqlalchemy
 pandas
 openpyxl
 pytest
+pytest-mock
 pytest-asyncio
-aiohttp
 pydantic_settings

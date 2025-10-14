@@ -26,5 +26,10 @@ class PostMatchResponse(BaseResponse):
 
 
 
+class DeleteMatchResponse(BaseResponse):
+    pass
+
+
+
 class GetMatchResponse(BaseResponse):
     pass

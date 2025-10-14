@@ -19,5 +19,9 @@ class PostQuestionResponse(BaseResponse):
 
 
 
+class DeleteQuestionResponse(BaseResponse):
+    pass
+
+
 class GetQuestionResponse(BaseResponse):
     pass

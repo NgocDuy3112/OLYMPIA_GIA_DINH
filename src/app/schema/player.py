@@ -14,5 +14,10 @@ class PostPlayerResponse(BaseResponse):
 
 
 
+class DeletePlayerResponse(BaseResponse):
+    pass
+
+
+
 class GetPlayerResponse(BaseResponse):
     pass

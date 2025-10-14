@@ -15,6 +15,7 @@ record_router = APIRouter(prefix='/records', tags=['Diễn biến'])
     responses={
         200: {'model': PostRecordResponse, 'description': 'Successfully upload a match'},
         404: {'description': 'Not Found'},
+        409: {'description': 'There is an existing record'},
         500: {'description': 'Internal Server Error'}
     }
 )

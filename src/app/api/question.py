@@ -16,6 +16,7 @@ question_router = APIRouter(prefix='/questions', tags=['Câu hỏi'])
     responses={
         200: {'model': PostQuestionResponse, 'description': 'Successfully post a question'},
         404: {'description': 'Not Found'},
+        409: {'description': 'There is an existing record'},
         500: {'description': 'Internal Server Error'}
     }
 )

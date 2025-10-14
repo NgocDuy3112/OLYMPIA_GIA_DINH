@@ -15,6 +15,7 @@ team_router = APIRouter(prefix='/teams', tags=['Đội chơi'])
     responses={
         200: {'model': PostTeamResponse, 'description': 'Successfully post a team'},
         404: {'description': 'Not Found'},
+        409: {'description': 'There is an existing record'},
         500: {'description': 'Internal Server Error'}
     }
 )
@@ -32,8 +33,8 @@ async def post_team(request: PostTeamRequest, session: AsyncSession=Depends(get_
         500: {'description': 'Internal Server Error'}
     }
 )
-async def get_all_teams(session: AsyncSession=Depends(get_db)):
-    return await get_all_teams_from_db(session)
+async def get_all_teams_with_players_info(session: AsyncSession=Depends(get_db)):
+    return await get_all_teams_with_players_info_from_db(session)
 
 
 
@@ -46,5 +47,5 @@ async def get_all_teams(session: AsyncSession=Depends(get_db)):
         500: {'description': 'Internal Server Error'}
     }
 )
-async def get_team_from_team_code(team_code: str, session: AsyncSession=Depends(get_db)):
-    return await get_team_from_team_code_from_db(team_code, session)
+async def get_team_with_players_info_from_team_code(team_code: str, session: AsyncSession=Depends(get_db)):
+    return await get_team_with_players_info_from_team_code_from_db(team_code, session)

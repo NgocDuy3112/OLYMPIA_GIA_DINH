@@ -15,6 +15,7 @@ match_router = APIRouter(prefix='/matches', tags=['Trận đấu'])
     responses={
         200: {'model': PostMatchResponse, 'description': 'Successfully upload a match'},
         404: {'description': 'Not Found'},
+        409: {'description': 'There is an existing record'},
         500: {'description': 'Internal Server Error'}
     }
 )

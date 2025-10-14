@@ -15,6 +15,7 @@ player_router = APIRouter(prefix='/players', tags=['Thí sinh'])
     responses={
         200: {'model': PostPlayerResponse, 'description': 'Successfully post a player'},
         404: {'description': 'Not Found'},
+        409: {'description': 'There is an existing record'},
         500: {'description': 'Internal Server Error'}
     }
 )
