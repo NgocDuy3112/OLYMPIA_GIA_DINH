@@ -1,15 +1,17 @@
-from pydantic_settings import BaseSettings
-from dotenv import load_dotenv
+from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
 
 
-load_dotenv('/src/configs/.env', override=True)
+DOTENV_PATH = '/src/configs/.env'
 
 
 
 class Settings(BaseSettings):
-    BASE_URL: str = os.getenv("BASE_URL")
-    DATABASE_URL: str = os.getenv("DATABASE_URL")
+    model_config = SettingsConfigDict(env_file=DOTENV_PATH)
+    BASE_URL: str
+    DATABASE_URL: str
+    VALKEY_ANSWERS_CACHE_URL: str
+
 
 
 settings = Settings()

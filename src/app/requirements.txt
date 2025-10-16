@@ -1,6 +1,7 @@
 fastapi[standard]
 asyncpg
 sqlalchemy
+valkey
 pandas
 openpyxl
 pytest

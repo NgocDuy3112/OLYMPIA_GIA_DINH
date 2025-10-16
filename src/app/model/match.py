@@ -24,12 +24,10 @@ class Match(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
-    match_code: Mapped[str] = mapped_column(String(length=3), unique=True)
+    match_code: Mapped[str] = mapped_column(String(length=5), unique=True)
     match_name: Mapped[str] = mapped_column(String(length=100), unique=True)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
-    player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id"), nullable=False)
 
     # Relationships
-    player: Mapped["Player"] = relationship(back_populates="matches") # type: ignore
     questions: Mapped[list["Question"]] = relationship(back_populates="match") # type: ignore
     records: Mapped[list["Record"]] = relationship(back_populates='match') # type: ignore

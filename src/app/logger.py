@@ -8,6 +8,7 @@ LOG_FILE_NAME = "app.log"
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
 
 
+
 def setup_logger(name: str = "app_logger", level: int = logging.INFO):
     """
     Sets up a robust logger with a file handler and a console handler.

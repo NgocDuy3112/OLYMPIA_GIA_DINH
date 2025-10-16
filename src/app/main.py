@@ -2,22 +2,31 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from app.db.dependencies import engine
+from app import model
+from app.db.dependencies import Base, engine
 from app.api import (
     player,
     team,
     match,
     answer,
-    record
+    record,
+    question
 )
+from app.logger import global_logger
+
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Application startup: Database engine initialized")
+    global_logger.info("Application startup: Database engine initialized")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+        global_logger.info("Database tables ensured.")
     yield
-    print("Application Shutdown: Disposing of database engine.")
-    if engine: await engine.dispose()
+    global_logger.info("Application Shutdown: Disposing of database engine.")
+    if engine: 
+        await engine.dispose()
+        global_logger.info("Database engine disposed.")
 
 
 
@@ -34,6 +43,7 @@ app.include_router(team.team_router)
 app.include_router(match.match_router)
 app.include_router(answer.answer_router)
 app.include_router(record.record_router)
+app.include_router(question.question_router)
 
 
 

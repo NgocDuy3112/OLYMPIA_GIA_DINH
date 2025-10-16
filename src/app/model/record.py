@@ -35,7 +35,9 @@ class Record(Base):
     # Foreign Keys
     player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id"), nullable=False)
     match_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("matches.id"), nullable=False)
+    question_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("questions.id"), nullable=False)
 
     # Relationships
     player: Mapped["Player"] = relationship(back_populates='records') # type: ignore
     match: Mapped["Match"] = relationship(back_populates='records') # type: ignore
+    question: Mapped["Question"] = relationship(back_populates='records') # type: ignore

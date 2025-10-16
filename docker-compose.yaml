@@ -11,12 +11,23 @@ services:
       - ./data/postgresql/ogd3:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ogd3"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
     restart: always
+    profiles:
+      - production
+      - developer
+
+  valkey:
+    container_name: valkey
+    image: valkey/valkey:8.1.1-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./configs/valkey.conf:/configs/valkey.conf
+      - ./data/valkey:/data
+    command: valkey-server /configs/valkey.conf
+    networks:
+      - ogd3-network
     profiles:
       - production
       - developer
@@ -37,7 +48,9 @@ services:
       - "8000:8000"
     depends_on:
       postgresql:
-        condition: service_healthy
+        condition: service_started
+      valkey:
+        condition: service_started
     networks:
       - ogd3-network
     restart: unless-stopped

@@ -25,6 +25,20 @@ async def post_question(request: PostQuestionRequest, session: AsyncSession=Depe
 
 
 
+@question_router.get(
+    "/",
+    response_model=GetQuestionResponse,
+    responses={
+        200: {'model': GetQuestionResponse, 'description': 'Successfully post a question'},
+        404: {'description': 'Not Found'},
+        500: {'description': 'Internal Server Error'}
+    }
+)
+async def get_all_questions_from_match_code(match_code: str, session: AsyncSession=Depends(get_db)):
+    return await get_all_questions_from_match_code_from_db(match_code, session)
+
+
+
 @question_router.post(
     "/upload",
     response_model=PostQuestionResponse,
@@ -41,9 +55,8 @@ async def post_questions_file(file: UploadFile=File(...), session: AsyncSession=
 
 @question_router.get(
     "/download",
-    response_model=StreamingResponse,
     responses={
-        200: {'model': StreamingResponse, 'description': 'Successfully get all the questions in a question file'},
+        200: {'description': 'Successfully get all the questions in a question file'},
         404: {'description': 'Not Found'},
         500: {'description': 'Internal Server Error'}
     }

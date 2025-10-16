@@ -37,6 +37,5 @@ class Player(Base):
 
     # Relationships
     team: Mapped["Team"] = relationship(back_populates="players") # type: ignore
-    matches: Mapped[list["Match"]] = relationship(back_populates='player') # type: ignore
     records: Mapped[list["Record"]] = relationship(back_populates="player") # type: ignore
     answers: Mapped[list["Answer"]] = relationship(back_populates='player') # type: ignore

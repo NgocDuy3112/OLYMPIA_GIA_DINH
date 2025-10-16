@@ -6,8 +6,8 @@ class PostQuestionRequest(BaseRequest):
     match_code: str
     question_code: str
     content: str
-    media_sources: str | None = None
     correct_answers: str
+    media_sources: str | None = None
     explaination: str | None = None
     citation: str | None = None
     note: str | None = None

@@ -3,6 +3,8 @@ from collections.abc import AsyncGenerator
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
 
+from valkey.asyncio import Valkey
+
 from app.config import settings
 
 
@@ -20,6 +22,12 @@ AsyncSessionLocal = sessionmaker(
 Base = declarative_base()
 
 
+
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
         yield session
+
+
+
+async def get_valkey_answers_cache() -> Valkey:
+    return Valkey.from_url(settings.VALKEY_ANSWERS_CACHE_URL)

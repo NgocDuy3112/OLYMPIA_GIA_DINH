@@ -25,6 +25,7 @@ def convert_sheet_name_to_round_code(sheet_name: str) -> str:
     return "".join([part[0] for part in parts])
 
 
+
 # Helper function to find ID by code and raise 404 (Copied from answer.py for self-sufficiency)
 async def _get_id_by_code(session: AsyncSession, model, code_field: str, code: str, entity_name: str) -> int:
     query = select(model.id).where(getattr(model, code_field) == code)
@@ -41,9 +42,9 @@ async def _get_id_by_code(session: AsyncSession, model, code_field: str, code: s
         raise HTTPException(status_code=500, detail=f"Database query failed for {entity_name} validation.")
 
 
+
 async def post_question_to_db(request: PostQuestionRequest, session: AsyncSession) -> PostQuestionResponse:
     global_logger.info(f"POST request received to create question with code: {request.question_code} for match: {request.match_code}.")
-    
     try:
         # 1. Validate Match existence
         match_id = await _get_id_by_code(session, Match, 'match_code', request.match_code, 'Match')
@@ -91,6 +92,7 @@ async def post_question_to_db(request: PostQuestionRequest, session: AsyncSessio
         )
 
 
+
 async def post_questions_file_to_db(file: UploadFile, session: AsyncSession) -> PostQuestionResponse:
     original_filename = file.filename
     global_logger.info(f"POST request received to upload questions file: {original_filename}.")
@@ -136,9 +138,7 @@ async def post_questions_file_to_db(file: UploadFile, session: AsyncSession) -> 
         # 4. Bulk Insert and Commit
         session.add_all(questions_list)
         await session.commit()
-        
         global_logger.info(f'Successfully uploaded {len(questions_list)} questions from file {original_filename}.')
-        
         return PostQuestionResponse(
             response={
                 'message': f'Upload questions from file {original_filename} successfully'
@@ -162,14 +162,56 @@ async def post_questions_file_to_db(file: UploadFile, session: AsyncSession) -> 
         )
 
 
+
+async def get_all_questions_from_match_code_from_db(match_code: str, session: AsyncSession) -> GetQuestionResponse:
+    global_logger.info(f"GET request received to get questions for match: {match_code}.")
+    try:
+        match_id = await _get_id_by_code(session, Match, 'match_code', match_code, 'Match')
+        global_logger.debug(f"Match ID: {match_id} for match_code: {match_code}")
+        questions_query = select(Question).where(Question.match_id == match_id)
+        execution = await session.execute(questions_query)
+        result = execution.scalars().all()
+        if not result:
+            global_logger.warning(f"No questions found for match with match_code={match_code} in the database. Returning 404.")
+            raise HTTPException(
+                status_code=404,
+                detail=f'No questions found for match with match_code={match_code} in the database'
+            )
+        return GetQuestionResponse(
+            response={
+                'data': {
+                    'match_code': match_code,
+                    'questions': [
+                        {
+                            'question_code': question.question_code,
+                            'content': question.content,
+                            'media_sources': question.media_sources,
+                            'correct_answers': question.correct_answers,
+                            'explaination': question.explaination,
+                            'citation': question.citation,
+                            'note': question.note
+                        }
+                    for question in result]
+                }
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        global_logger.exception(f'Unexpected error occurred during the fetching questions.')
+        raise HTTPException(
+            status_code=500,
+            detail=f'An unexpected error occurred during file upload.'
+        )
+
+
+
 async def get_all_questions_from_match_code_to_excel_file_from_db(match_code: str, session: AsyncSession) -> StreamingResponse:
     global_logger.info(f"GET request received to download questions file for match: {match_code}.")
-    
     try:
         # 1. Validate Match existence
         match_id = await _get_id_by_code(session, Match, 'match_code', match_code, 'Match')
         global_logger.debug(f"Match ID: {match_id} for match_code: {match_code}")
-        
         response_file_name = f'OGD3_{match_code}.xlsx'
         excel_file_buffer = io.BytesIO()
         round_codes = [convert_sheet_name_to_round_code(sheet_name) for sheet_name in SHEET_NAMES]
