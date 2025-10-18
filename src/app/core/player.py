@@ -1,5 +1,5 @@
-from sqlalchemy import select, delete
-from sqlalchemy.exc import IntegrityError, NoResultFound
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -9,22 +9,8 @@ from app.model.player import Player
 from app.model.team import Team
 from app.schema.player import *
 from app.logger import global_logger
+from app.utils.get_id_by_code import _get_id_by_code
 
-
-# Helper function to find ID by code and raise 404 (Copied from answer.py for self-sufficiency)
-async def _get_id_by_code(session: AsyncSession, model, code_field: str, code: str, entity_name: str) -> int:
-    query = select(model.id).where(getattr(model, code_field) == code)
-    try:
-        execution = await session.execute(query)
-        entity_id = execution.scalar_one()
-        return entity_id
-    except NoResultFound:
-        raise HTTPException(
-            status_code=404,
-            detail=f'{entity_name} with {code_field}={code} not found!'
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database query failed for {entity_name} validation.")
 
 
 async def post_player_to_db(request: PostPlayerRequest, session: AsyncSession) -> PostPlayerResponse:
@@ -40,7 +26,6 @@ async def post_player_to_db(request: PostPlayerRequest, session: AsyncSession) -
         global_logger.error(f"Failed to query team ID for team_code={request.team_code}. Error: {e.__class__.__name__}")
         raise HTTPException(status_code=500, detail="Database query failed for team validation.")
 
-
     # 2. Create the new Player object
     new_player = Player(
         player_code=request.player_code,
@@ -55,7 +40,6 @@ async def post_player_to_db(request: PostPlayerRequest, session: AsyncSession) -
         await session.commit()
         await session.refresh(new_player)
         global_logger.info(f"Player created successfully. player_id={new_player.id}, team_id={team_id}")
-        
         return PostPlayerResponse(
             response={'message': f'Player {request.player_code} created successfully for team {request.team_code}.'}
         )
@@ -74,6 +58,33 @@ async def post_player_to_db(request: PostPlayerRequest, session: AsyncSession) -
             status_code=500,
             detail='An unexpected server error occurred during player creation.'
         )
+
+
+
+async def put_player_to_db(request: PutPlayerRequest, session: AsyncSession) -> PutPlayerResponse:
+    global_logger.info(f"PUT request received for updating a player with player_code={request.player_code}.")
+    try:
+        player_query = select(Player).where(Player.player_code == request.player_code)
+        execution = await session.execute(player_query)
+        player_found = execution.scalar_one_or_none()
+        if player_found is None:
+            raise HTTPException(status_code=404, detail="Player not found for the given player_code.")
+        player_found.player_name = request.player_name
+        player_found.team_code = request.team_code
+        await session.commit()
+        await session.refresh(player_found)
+        global_logger.info(f"Player updated successfully for player_code={request.player_code}")
+        return PutPlayerResponse(response={"message": "Player updated successfully!"})
+    except HTTPException:
+        raise
+    except Exception:
+        await session.rollback()
+        global_logger.exception(f'Unexpected error during player update for player_code={request.player_code}.')
+        raise HTTPException(
+            status_code=500,
+            detail=f'An unexpected error occurred during player update.'
+        )
+
 
 
 async def get_all_players_from_db(session: AsyncSession) -> GetPlayerResponse:
@@ -135,7 +146,6 @@ async def get_player_from_player_code_from_db(
             )
             
         global_logger.info(f"Successfully retrieved player: {player_code}.")
-            
         return GetPlayerResponse(
             response={
                 'data': {
@@ -153,4 +163,34 @@ async def get_player_from_player_code_from_db(
         raise HTTPException(
             status_code=500,
             detail='An unexpected error occurred while fetching a player.'
+        )
+
+
+
+async def delete_player_from_player_code_from_db(player_code: str, session: AsyncSession) -> DeletePlayerResponse:
+    # We don't actually delete the player, just set the is_deleted=True
+    global_logger.info(f"DELETE request received for player with player_code={player_code}.")
+    try:
+        player_delete_query = select(Player).where(Player.player_code == player_code)
+        execution = await session.execute(player_delete_query)
+        player_found = execution.unique().scalar_one_or_none()
+        if player_found is None:
+            global_logger.warning(f"Player not found: player_code={player_code}. Returning 404.")
+            raise HTTPException(
+                status_code=404,
+                detail=f'No player with player_code={player_code} existed'
+            )
+        player_found.is_deleted = True
+        await session.commit()
+        await session.refresh(player_found)
+        global_logger.info(f"Player deleted successfully for player_code={player_code}")
+        return DeletePlayerResponse(response={"message": "Player deleted successfully!"})
+    except HTTPException:
+        raise
+    except Exception:
+        await session.rollback()
+        global_logger.exception(f'Unexpected error during player deletion for player_code={player_code}.')
+        raise HTTPException(
+            status_code=500,
+            detail=f'An unexpected error occurred during player deletion.'
         )

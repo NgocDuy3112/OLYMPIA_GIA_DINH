@@ -10,6 +10,7 @@ from app.schema.match import *
 from app.logger import global_logger
 
 
+
 async def post_match_to_db(request: PostMatchRequest, session: AsyncSession) -> PostMatchResponse:
     global_logger.info(f"POST request received to create match with code: {request.match_code}.")
     new_match = Match(
@@ -42,6 +43,7 @@ async def post_match_to_db(request: PostMatchRequest, session: AsyncSession) -> 
         )
 
 
+
 async def get_all_matches_from_db(session: AsyncSession) -> GetMatchResponse:
     global_logger.info("GET request received for all matches with players info.")
     try:
@@ -68,6 +70,7 @@ async def get_all_matches_from_db(session: AsyncSession) -> GetMatchResponse:
             status_code=500,
             detail=f'An unexpected error occurred while fetching all matches.'
         )
+
 
 
 async def get_match_from_match_code_from_db(match_code: str, session: AsyncSession) -> GetMatchResponse:
@@ -104,7 +107,8 @@ async def get_match_from_match_code_from_db(match_code: str, session: AsyncSessi
         )
 
 
-async def delete_match_from_db(match_code: str, session: AsyncSession) -> DeleteMatchResponse:
+
+async def delete_match_from_match_code_from_db(match_code: str, session: AsyncSession) -> DeleteMatchResponse:
     """
     Deletes a match identified by its unique match_code.
     Raises 404 if not found or 409 if dependencies exist (e.g., questions, answers, records).

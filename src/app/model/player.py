@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy import String, DateTime, Boolean, ForeignKey, CheckConstraint, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.dependencies import Base
+from app.dependencies.db import Base
 from app.model import *
 
 
@@ -28,7 +28,7 @@ class Player(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
-    player_code: Mapped[str] = mapped_column(String(length=5), unique=True)
+    player_code: Mapped[str] = mapped_column(String(length=5), unique=True, index=True)
     player_name: Mapped[str] = mapped_column(String(length=25))
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 

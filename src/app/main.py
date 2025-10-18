@@ -3,14 +3,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app import model
-from app.db.dependencies import Base, engine
+from app.dependencies.db import Base, engine
 from app.api import (
     player,
     team,
     match,
     answer,
     record,
-    question
+    question,
+    auth
 )
 from app.logger import global_logger
 
@@ -38,6 +39,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(auth.auth_router)
 app.include_router(player.player_router)
 app.include_router(team.team_router)
 app.include_router(match.match_router)

@@ -4,7 +4,10 @@ sqlalchemy
 valkey
 pandas
 openpyxl
+pydantic_settings
+passlib[bcrypt]
+pyjwt
+python-jose
 pytest
 pytest-mock
 pytest-asyncio
-pydantic_settings

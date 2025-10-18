@@ -15,5 +15,18 @@ class PostRecordResponse(BaseResponse):
 
 
 
+class PutRecordRequest(BaseRequest):
+    match_code: str
+    player_code: str
+    question_code: str
+    d_score_earned: int
+
+
+
+class PutRecordResponse(BaseResponse):
+    pass
+
+
+
 class GetRecordsResponse(BaseResponse):
     pass

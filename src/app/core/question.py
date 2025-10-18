@@ -12,7 +12,8 @@ from fastapi.responses import StreamingResponse
 from app.model.match import Match
 from app.model.question import Question
 from app.schema.question import *
-from app.logger import global_logger # Added logging import
+from app.logger import global_logger
+from app.utils.get_id_by_code import _get_id_by_code
 
 
 SHEET_NAMES = ['LAM_NONG', 'VUOT_DEO', 'BUT_PHA', 'NUOC_RUT']
@@ -23,23 +24,6 @@ XLSX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sh
 def convert_sheet_name_to_round_code(sheet_name: str) -> str:
     parts = sheet_name.split("_")
     return "".join([part[0] for part in parts])
-
-
-
-# Helper function to find ID by code and raise 404 (Copied from answer.py for self-sufficiency)
-async def _get_id_by_code(session: AsyncSession, model, code_field: str, code: str, entity_name: str) -> int:
-    query = select(model.id).where(getattr(model, code_field) == code)
-    try:
-        execution = await session.execute(query)
-        entity_id = execution.scalar_one()
-        return entity_id
-    except NoResultFound:
-        raise HTTPException(
-            status_code=404,
-            detail=f'{entity_name} with {code_field}={code} not found!'
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database query failed for {entity_name} validation.")
 
 
 

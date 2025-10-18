@@ -1,5 +1,5 @@
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError, NoResultFound
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -10,6 +10,7 @@ from app.schema.team import *
 from app.logger import global_logger
 
 
+
 async def post_team_to_db(request: PostTeamRequest, session: AsyncSession) -> PostTeamResponse:
     global_logger.info(f"POST request received to create team with code: {request.team_code}.")
     new_team = Team(
@@ -18,7 +19,6 @@ async def post_team_to_db(request: PostTeamRequest, session: AsyncSession) -> Po
     )
     session.add(new_team)
     global_logger.debug(f"Team object created and added to session. team_code={request.team_code}")
-
     try:
         await session.commit()
         await session.refresh(new_team)
@@ -27,7 +27,6 @@ async def post_team_to_db(request: PostTeamRequest, session: AsyncSession) -> Po
         return PostTeamResponse(
             response={'message': f'Team with team_code={request.team_code} created successfully.'}
         )
-
     except IntegrityError:
         await session.rollback()
         global_logger.warning(f"Failed to create team due to unique constraint violation. team_code={request.team_code}. Returning 409.")
@@ -42,6 +41,32 @@ async def post_team_to_db(request: PostTeamRequest, session: AsyncSession) -> Po
             status_code=500,
             detail=f'An unexpected server error occurred during team creation.'
         )
+
+
+
+async def put_team_to_db(request: PutTeamRequest, session: AsyncSession) -> PutTeamResponse:
+    global_logger.info(f"PUT request received to update team with code: {request.team_code}.")
+    try:
+        team_query = select(Team).where(Team.team_code == request.team_code)
+        execution = await session.execute(team_query)
+        team_found = execution.scalar_one_or_none()
+        if team_found is None:
+            raise HTTPException(status_code=404, detail="Team not found for the given team_code.")
+        team_found.team_name = request.team_name
+        await session.commit()
+        await session.refresh(team_found)
+        global_logger.info(f"Team updated successfully for team_code={request.team_code}")
+        return PutTeamResponse(response={"message": "Team updated successfully!"})
+    except HTTPException:
+        raise
+    except Exception:
+        await session.rollback()
+        global_logger.exception(f'Unexpected error during team update for team_code={request.team_code}.')
+        raise HTTPException(
+            status_code=500,
+            detail=f'An unexpected error occurred during team update.'
+        )
+
 
 
 async def get_all_teams_with_players_info_from_db(session: AsyncSession) -> GetTeamResponse:
@@ -91,6 +116,7 @@ async def get_all_teams_with_players_info_from_db(session: AsyncSession) -> GetT
         )
 
 
+
 async def get_team_with_players_info_from_team_code_from_db(team_code: str, session: AsyncSession) -> GetTeamResponse:
     global_logger.info(f"GET request received for team: {team_code} with players info.")
     try:
@@ -133,4 +159,34 @@ async def get_team_with_players_info_from_team_code_from_db(team_code: str, sess
         raise HTTPException(
             status_code=500,
             detail=f'An unexpected error occurred while fetching team.'
+        )
+
+
+
+async def delete_team_from_team_code_from_db(team_code: str, session: AsyncSession) -> DeleteTeamResponse:
+    # We don't actually delete the player, just set the is_deleted=True
+    global_logger.info(f"DELETE request received for team with team_code={team_code}.")
+    try:
+        team_delete_query = select(Team).where(Team.team_code == team_code)
+        execution = await session.execute(team_delete_query)
+        team_found = execution.unique().scalar_one_or_none()
+        if team_found is None:
+            global_logger.warning(f"Team not found: team_code={team_code}. Returning 404.")
+            raise HTTPException(
+                status_code=404,
+                detail=f'No team with team_code={team_code} existed'
+            )
+        team_found.is_deleted = True
+        await session.commit()
+        await session.refresh(team_found)
+        global_logger.info(f"Team deleted successfully for team_code={team_code}")
+        return DeleteTeamResponse(response={"message": "Team deleted successfully!"})
+    except HTTPException:
+        raise
+    except Exception:
+        await session.rollback()
+        global_logger.exception(f'Unexpected error during team deletion for team_code={team_code}.')
+        raise HTTPException(
+            status_code=500,
+            detail=f'An unexpected error occurred during team deletion.'
         )

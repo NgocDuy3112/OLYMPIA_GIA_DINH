@@ -14,6 +14,18 @@ class PostPlayerResponse(BaseResponse):
 
 
 
+class PutPlayerRequest(BaseRequest):
+    team_code: str
+    player_code: str
+    player_name: str
+
+
+
+class PutPlayerResponse(BaseResponse):
+    pass
+
+
+
 class DeletePlayerResponse(BaseResponse):
     pass
 

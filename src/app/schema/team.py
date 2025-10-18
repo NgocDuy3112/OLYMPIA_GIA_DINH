@@ -13,6 +13,17 @@ class PostTeamResponse(BaseResponse):
 
 
 
+class PutTeamRequest(BaseRequest):
+    team_code: str
+    team_name: str
+
+
+
+class PutTeamResponse(BaseResponse):
+    pass
+
+
+
 class GetTeamResponse(BaseResponse):
     pass
 

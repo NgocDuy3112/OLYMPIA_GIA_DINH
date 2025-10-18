@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy import String, DateTime, UUID, ForeignKey, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.dependencies import Base
+from app.dependencies.db import Base
 from app.model import *
 
 
@@ -35,4 +35,4 @@ class Question(Base):
     # Relationships
     match: Mapped["Match"] = relationship(back_populates='questions') # type: ignore
     answers: Mapped[list["Answer"]] = relationship(back_populates='question') # type: ignore
-    records: Mapped[list["Question"]] = relationship(back_populates='question')
+    records: Mapped[list["Record"]] = relationship(back_populates='question')

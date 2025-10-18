@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy import String, DateTime, ForeignKey, Numeric, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.dependencies import Base
+from app.dependencies.db import Base
 from app.model import *
 
 

@@ -6,7 +6,6 @@ from decimal import Decimal
 from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import NoResultFound
 
 from valkey.asyncio import Valkey
 
@@ -18,26 +17,7 @@ from app.model.answer import Answer
 from app.model.question import Question
 from app.schema.answer import *
 from app.logger import global_logger
-
-
-
-# Helper function to find ID by code and raise 404
-async def _get_id_by_code(session: AsyncSession, model, code_field: str, code: str, entity_name: str) -> uuid.UUID:
-    query = select(model.id).where(getattr(model, code_field) == code)
-    try:
-        execution = await session.execute(query)
-        entity_id = execution.scalar_one()
-        global_logger.debug(f"{entity_name} found. {code_field}: {code}, id: {entity_id}")
-        return entity_id
-    except NoResultFound:
-        global_logger.warning(f"{entity_name} not found: {code_field}={code}. Returning 404.")
-        raise HTTPException(
-            status_code=404,
-            detail=f'{entity_name} with {code_field}={code} not found!'
-        )
-    except Exception as e:
-        global_logger.error(f"Failed to query {entity_name} ID for {code_field}={code}. Error: {e.__class__.__name__}")
-        raise HTTPException(status_code=500, detail=f"Database query failed for {entity_name} validation.")
+from app.utils.get_id_by_code import _get_id_by_code
 
 
 
