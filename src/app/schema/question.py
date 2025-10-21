@@ -7,16 +7,11 @@ class PostQuestionRequest(BaseRequest):
     question_code: str
     content: str
     correct_answers: str
-    media_sources: str | None = None
-    explaination: str | None = None
-    citation: str | None = None
-    note: str | None = None
-
+    extra_info: dict | None = None  # media_sources, explaination, citation, note
 
 
 class PostQuestionResponse(BaseResponse):
     pass
-
 
 
 class PutQuestionRequest(BaseRequest):
@@ -24,21 +19,15 @@ class PutQuestionRequest(BaseRequest):
     question_code: str
     content: str
     correct_answers: str
-    media_sources: str | None = None
-    explaination: str | None = None
-    citation: str | None = None
-    note: str | None = None
-
+    extra_info:  dict | None = None
 
 
 class PutQuestionResponse(BaseResponse):
     pass
 
 
-
 class DeleteQuestionResponse(BaseResponse):
     pass
-
 
 
 class GetQuestionResponse(BaseResponse):

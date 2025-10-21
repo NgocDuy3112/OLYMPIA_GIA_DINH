@@ -58,26 +58,6 @@ services:
       - production
       - developer
 
-  agent:
-    container_name: agent
-    build:
-      context: ./src/agent
-    working_dir: /src/agent
-    entrypoint: /src/agent/entrypoint.sh
-    volumes:
-      - ./src/agent:/src/agent
-      - ./configs/.env.agent:/src/configs/.env
-    environment:
-      - ENV_FILE=/src/configs/.env
-      - PYTHONPATH=/src
-    ports:
-      - "8001:8000"
-    networks:
-      - ogd3-network
-    restart: always
-    profiles:
-      - production
-
   bot:
     container_name: bot
     build:

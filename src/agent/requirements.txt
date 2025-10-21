@@ -1,2 +1,0 @@
-fastapi[standard]
-groq==0.28.0

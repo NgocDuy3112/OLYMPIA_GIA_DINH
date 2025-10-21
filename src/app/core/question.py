@@ -1,11 +1,9 @@
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError, NoResultFound
-
+from sqlalchemy.exc import IntegrityError
 import io
 import re
 import pandas as pd
-
 from fastapi import HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
@@ -17,9 +15,7 @@ from app.utils.get_id_by_code import _get_id_by_code
 
 
 SHEET_NAMES = ['LAM_NONG', 'VUOT_DEO', 'BUT_PHA', 'NUOC_RUT']
-COLUMN_NAMES = ['Code', 'Câu hỏi', 'Media', 'Đáp án', 'Giải thích', 'Nguồn tham khảo', 'Ghi chú']
 XLSX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-
 
 
 def convert_sheet_name_to_round_code(sheet_name: str) -> str:
@@ -29,293 +25,166 @@ def convert_sheet_name_to_round_code(sheet_name: str) -> str:
 
 
 async def post_question_to_db(request: PostQuestionRequest, session: AsyncSession) -> PostQuestionResponse:
-    global_logger.info(f"POST request received to create question with code: {request.question_code} for match: {request.match_code}.")
+    global_logger.info(f"POST question {request.question_code} for match {request.match_code}")
     try:
-        # 1. Validate Match existence
         match_id = await _get_id_by_code(session, Match, 'match_code', request.match_code, 'Match')
-        global_logger.debug(f"Match found. match_code: {request.match_code}, match_id: {match_id}")
-        
-        # 2. Create the new Question object
+
         new_question = Question(
             match_id=match_id,
             question_code=request.question_code,
             content=request.content,
-            media_sources=request.media_sources,
             correct_answers=request.correct_answers,
-            explaination=request.explaination,
-            citation=request.citation,
-            note=request.note
+            extra_info=request.extra_info or {}
         )
+
         session.add(new_question)
-        global_logger.debug(f"Question object created and added to session. question_code={request.question_code}")
-        
-        # 3. Commit and Handle Errors
         await session.commit()
         await session.refresh(new_question)
-        global_logger.info(f"Question created successfully. question_id={new_question.id}, match_id={match_id}")
-        
-        return PostQuestionResponse(
-            response={
-                'message': 'Add a new question successfully!'
-            }
-        )
-    except HTTPException:
-        raise
+        return PostQuestionResponse(response={'message': 'Question added successfully'})
     except IntegrityError:
         await session.rollback()
-        global_logger.warning(f"Failed to create question due to unique constraint violation. question_code={request.question_code}. Returning 409.")
-        raise HTTPException(
-            status_code=409,
-            detail=f'A question with question_code={request.question_code} already exists.'
-        )
-    except Exception:
+        raise HTTPException(409, f'Question with code {request.question_code} already exists.')
+    except Exception as e:
         await session.rollback()
-        global_logger.exception(f'Unexpected error during question creation/commit for code={request.question_code}, match_code={request.match_code}.')
-        raise HTTPException(
-            status_code=500,
-            detail=f'An unexpected error occurred during question creation.'
-        )
+        global_logger.exception("Error posting question")
+        raise HTTPException(500, f'Unexpected error: {e}')
+
 
 
 
 async def post_questions_file_to_db(file: UploadFile, session: AsyncSession) -> PostQuestionResponse:
-    original_filename = file.filename
-    global_logger.info(f"POST request received to upload questions file: {original_filename}.")
+    filename = file.filename
+    global_logger.info(f"Uploading file: {filename}")
     try:
-        # 1. Validate File Name Format
         pattern = r'^OGD3_M[\w-]+\.xls(x)?$'
-        if not re.match(pattern, original_filename):
-            global_logger.warning(f"Invalid file name format: {original_filename}. Returning 400.")
-            raise HTTPException(
-                status_code=400,
-                detail='The Excel file name is not in the correct format: OGD3_Mxx.xls(x)'
-            )
-            
-        # 2. Get Match ID
-        match_code = original_filename.split(".")[0].split("_")[1]
-        match_id = await _get_id_by_code(session, Match, 'match_code', match_code, 'Match')
-        global_logger.debug(f"File match code: {match_code}, Match ID: {match_id}")
+        if not re.match(pattern, filename):
+            raise HTTPException(400, 'Invalid file name format: OGD3_Mxx.xls(x)')
 
-        # 3. Process File Content
+        match_code = filename.split(".")[0].split("_")[1]
+        match_id = await _get_id_by_code(session, Match, 'match_code', match_code, 'Match')
+
         content = await file.read()
-        content_io = io.BytesIO(content)
-        questions_list: list[Question] = []
-        
-        for sheet_name in SHEET_NAMES:
-            content_io.seek(0)
-            df = pd.read_excel(content_io, sheet_name)
-            rows_as_dicts = df.to_dict('records')
-            global_logger.debug(f"Processing sheet '{sheet_name}' with {len(rows_as_dicts)} rows.")
-            
-            for row in rows_as_dicts:
-                questions_list.append(Question(
+        io_buf = io.BytesIO(content)
+        questions = []
+
+        for sheet in SHEET_NAMES:
+            io_buf.seek(0)
+            df = pd.read_excel(io_buf, sheet)
+            for row in df.to_dict('records'):
+                extra_info = {
+                    "media_sources": row.get("Media"),
+                    "explaination": row.get("Giải thích"),
+                    "citation": row.get("Nguồn tham khảo"),
+                    "note": row.get("Ghi chú")
+                }
+                questions.append(Question(
                     match_id=match_id,
                     question_code=str(row['Code']),
                     content=str(row['Câu hỏi']),
                     correct_answers=str(row['Đáp án']),
-                    media_sources=str(row['Media']) if row['Media'] else None,
-                    explaination=str(row['Giải thích']) if row['Giải thích'] else None,
-                    citation=str(row['Nguồn tham khảo']) if row['Nguồn tham khảo'] else None,
-                    note=str(row['Ghi chú']) if row['Ghi chú'] else None
+                    extra_info={k: v for k, v in extra_info.items() if v}
                 ))
-                
-        # 4. Bulk Insert and Commit
-        session.add_all(questions_list)
+
+        session.add_all(questions)
         await session.commit()
-        global_logger.info(f'Successfully uploaded {len(questions_list)} questions from file {original_filename}.')
-        return PostQuestionResponse(
-            response={
-                'message': f'Upload questions from file {original_filename} successfully'
-            }
-        )
-    except HTTPException:
-        raise
+        return PostQuestionResponse(response={'message': f'Uploaded {len(questions)} questions successfully'})
     except IntegrityError:
         await session.rollback()
-        global_logger.warning(f"Failed to bulk upload questions due to unique constraint violation in file {original_filename}. Returning 409.")
-        raise HTTPException(
-            status_code=409,
-            detail=f'One or more questions in the file already exist (unique code conflict).'
-        )
-    except Exception:
+        raise HTTPException(409, 'Duplicate question codes found in file')
+    except Exception as e:
         await session.rollback()
-        global_logger.exception(f'Unexpected error occurred during bulk upload of file {original_filename}.')
-        raise HTTPException(
-            status_code=500,
-            detail=f'An unexpected error occurred during file upload.'
-        )
+        global_logger.exception("Error uploading questions file")
+        raise HTTPException(500, f'Unexpected error: {e}')
 
 
 
 async def get_all_questions_from_match_code_from_db(match_code: str, session: AsyncSession) -> GetQuestionResponse:
-    global_logger.info(f"GET request received to get questions for match: {match_code}.")
     try:
         match_id = await _get_id_by_code(session, Match, 'match_code', match_code, 'Match')
-        global_logger.debug(f"Match ID: {match_id} for match_code: {match_code}")
-        questions_query = select(Question).where(Question.match_id == match_id)
-        execution = await session.execute(questions_query)
-        result = execution.scalars().all()
-        if not result:
-            global_logger.warning(f"No questions found for match with match_code={match_code} in the database. Returning 404.")
-            raise HTTPException(
-                status_code=404,
-                detail=f'No questions found for match with match_code={match_code} in the database'
-            )
-        return GetQuestionResponse(
-            response={
-                'data': {
-                    'match_code': match_code,
-                    'questions': [
-                        {
-                            'question_code': question.question_code,
-                            'content': question.content,
-                            'correct_answers': question.correct_answers,
-                            'media_sources': question.media_sources,
-                            'explaination': question.explaination,
-                            'citation': question.citation,
-                            'note': question.note
-                        }
-                    for question in result]
-                }
+        result = await session.execute(select(Question).where(Question.match_id == match_id))
+        questions = result.scalars().all()
+        if not questions:
+            raise HTTPException(404, f'No questions found for match {match_code}')
+
+        return GetQuestionResponse(response={
+            'data': {
+                'match_code': match_code,
+                'questions': [
+                    {
+                        'question_code': q.question_code,
+                        'content': q.content,
+                        'correct_answers': q.correct_answers,
+                        **(q.extra_info or {})
+                    }
+                    for q in questions
+                ]
             }
-        )
+        })
     except HTTPException:
         raise
-    except Exception:
-        global_logger.exception(f'Unexpected error occurred during the fetching questions.')
-        raise HTTPException(
-            status_code=500,
-            detail=f'An unexpected error occurred during file upload.'
-        )
+    except Exception as e:
+        global_logger.exception("Error fetching questions")
+        raise HTTPException(500, f'Unexpected error: {e}')
 
 
 
 async def get_all_questions_from_match_code_to_excel_file_from_db(match_code: str, session: AsyncSession) -> StreamingResponse:
-    global_logger.info(f"GET request received to download questions file for match: {match_code}.")
     try:
-        # 1. Validate Match existence
         match_id = await _get_id_by_code(session, Match, 'match_code', match_code, 'Match')
-        global_logger.debug(f"Match ID: {match_id} for match_code: {match_code}")
-        response_file_name = f'OGD3_{match_code}_exported.xlsx'
-        excel_file_buffer = io.BytesIO()
-        round_codes = [convert_sheet_name_to_round_code(sheet_name) for sheet_name in SHEET_NAMES]
-        questions_by_round: dict[str, list] = {}
-        total_questions = 0
+        buffer = io.BytesIO()
+        response_name = f'OGD3_{match_code}_exported.xlsx'
+        total = 0
 
-        # 2. Fetch Questions by Round
-        for sheet_name, round_code in zip(SHEET_NAMES, round_codes): # Use zip for better association
-            # The query should check match_id AND the round code prefix
-            questions_query = select(Question).where(
-                Question.match_id == match_id,
-                Question.question_code.like(f'{round_code}%')
-            )
-            execution = await session.execute(questions_query)
-            questions = execution.unique().scalars().all()
-            
-            questions_by_round[sheet_name] = questions
-            total_questions += len(questions)
-            global_logger.debug(f"Fetched {len(questions)} questions for sheet '{sheet_name}'.")
+        with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+            for sheet in SHEET_NAMES:
+                code_prefix = convert_sheet_name_to_round_code(sheet)
+                result = await session.execute(
+                    select(Question).where(
+                        Question.match_id == match_id,
+                        Question.question_code.like(f'{code_prefix}%')
+                    )
+                )
+                questions = result.scalars().all()
+                total += len(questions)
 
-        if total_questions == 0:
-            global_logger.warning(f"No questions found for match_code={match_code}. Returning 404.")
-            raise HTTPException(
-                status_code=404,
-                detail=f"No questions found from match_code={match_code}"
-            )
+                data = []
+                for q in questions:
+                    info = q.extra_info or {}
+                    data.append({
+                        'Code': q.question_code,
+                        'Câu hỏi': q.content,
+                        'Đáp án': q.correct_answers,
+                        'Media': info.get('media_sources'),
+                        'Giải thích': info.get('explaination'),
+                        'Nguồn tham khảo': info.get('citation'),
+                        'Ghi chú': info.get('note')
+                    })
+                pd.DataFrame(data).to_excel(writer, sheet_name=sheet, index=False)
 
-        # 3. Write to Excel
-        with pd.ExcelWriter(excel_file_buffer, engine='openpyxl') as writer:
-            for sheet_name, questions_list in questions_by_round.items():
-                data_for_df = [
-                    {
-                        'Code': question.question_code,
-                        'Câu hỏi': question.content,
-                        'Đáp án': question.correct_answers,
-                        'Media': question.media_sources,
-                        'Giải thích': question.explaination,
-                        'Nguồn tham khảo': question.citation,
-                        'Ghi chú': question.note
-                    }
-                    for question in questions_list
-                ]
-                df = pd.DataFrame(data_for_df)
-                df.to_excel(writer, sheet_name=sheet_name, index=False)
-                
-        excel_file_buffer.seek(0)
-        
-        global_logger.info(f"Successfully generated and sending file {response_file_name} with {total_questions} questions.")
-        
-        # 4. Return the file using StreamingResponse
+        buffer.seek(0)
         return StreamingResponse(
-            excel_file_buffer,
+            buffer,
             media_type=XLSX_MIME_TYPE,
-            headers={
-                "Content-Disposition": f"attachment; filename={response_file_name}"
-            }
+            headers={"Content-Disposition": f"attachment; filename={response_name}"}
         )
-    except HTTPException:
-        raise
-    except Exception:
-        global_logger.exception(f'Unexpected error occurred while generating Excel file for match_code={match_code}.')
-        raise HTTPException(
-            status_code=500,
-            detail=f'An unexpected error occurred during file generation.'
-        )
+    except Exception as e:
+        global_logger.exception("Error exporting questions")
+        raise HTTPException(500, f'Unexpected error: {e}')
 
 
-
-from sqlalchemy import select, update
-from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException
-# Assuming Question, Match, global_logger, and DeleteQuestionResponse are defined elsewhere
 
 async def delete_all_questions_from_match_code_in_db(match_code: str, session: AsyncSession) -> DeleteQuestionResponse:
-    global_logger.info(f"DELETE request received to soft-delete questions for match: {match_code}.")
-    
-    # 1. Get the match_id subquery
-    match_id_subquery = select(Match.id).where(Match.match_code == match_code).scalar_subquery()
-    
-    # 2. Check if any questions exist for the match (optional but good for 404 response)
-    # Using a select(literal(1)) for existence check is often more efficient
-    existence_query = select(Question.id).where(Question.match_id == match_id_subquery).limit(1)
-    exists_result = await session.execute(existence_query)
-    if not exists_result.scalar_one_or_none():
-        global_logger.warning(f"No questions found for match with match_code={match_code} in the database. Returning 404.")
-        raise HTTPException(
-            status_code=404,
-            detail=f'No questions found for match with match_code={match_code} in the database'
-        )
+    match_id_sub = select(Match.id).where(Match.match_code == match_code).scalar_subquery()
+    exists = await session.execute(select(Question.id).where(Question.match_id == match_id_sub).limit(1))
+    if not exists.scalar_one_or_none():
+        raise HTTPException(404, f'No questions found for match {match_code}')
 
-    # 3. Perform the bulk soft-delete update
     try:
-        update_query = (
-            update(Question)
-            .where(Question.match_id == match_id_subquery)
-            .values(is_deleted=True)
-            # Instructs SQLAlchemy to return the count of rows updated
-            .returning(Question.id)
-        )
-        
-        # execution_result contains the updated rows' primary keys (if supported/necessary)
-        execution_result = await session.execute(update_query)
-        deleted_count = execution_result.rowcount # Get the count of affected rows
-
-        # CRITICAL: Commit the transaction to save the changes
-        await session.commit() 
-        global_logger.info(f"Successfully soft-deleted {deleted_count} questions for match_code={match_code}.")
-        return DeleteQuestionResponse(
-            response={
-                'message': f'Successfully soft-deleted {deleted_count} questions for match_code={match_code}.'
-            }
-        )
-    except HTTPException:
-        # Re-raise explicit HTTPExceptions (like the 404 if placed inside the try block)
-        raise
-    except Exception:
-        # Rollback in case of any other error
+        q = update(Question).where(Question.match_id == match_id_sub).values(is_deleted=True)
+        res = await session.execute(q)
+        await session.commit()
+        return DeleteQuestionResponse(response={'message': f'Soft-deleted {res.rowcount} questions'})
+    except Exception as e:
         await session.rollback()
-        global_logger.exception(f'Unexpected error occurred during soft-deletion of questions for match_code={match_code}.')
-        raise HTTPException(
-            status_code=500,
-            detail=f'An unexpected error occurred during question deletion.'
-        )
+        global_logger.exception("Error deleting questions")
+        raise HTTPException(500, f'Unexpected error: {e}')
