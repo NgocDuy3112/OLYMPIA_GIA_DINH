@@ -1,4 +1,4 @@
-from sqlalchemy import select, delete
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError, NoResultFound
@@ -110,45 +110,47 @@ async def get_match_from_match_code_from_db(match_code: str, session: AsyncSessi
 
 async def delete_match_from_match_code_from_db(match_code: str, session: AsyncSession) -> DeleteMatchResponse:
     """
-    Deletes a match identified by its unique match_code.
-    Raises 404 if not found or 409 if dependencies exist (e.g., questions, answers, records).
+    Soft-deletes a match identified by its unique match_code by setting is_deleted = True.
+    Raises 404 if the match is not found.
     """
-    global_logger.info(f"DELETE request received for match: {match_code}.")
+    global_logger.info(f"UPDATE request received to soft-delete match: {match_code}.")
     
     try:
-        # 1. Select the Match to ensure existence and get the ID
-        match_query = select(Match.id).where(Match.match_code == match_code)
-        execution = await session.execute(match_query)
-        match_id = execution.scalar_one()
-
-        # 2. Perform the deletion
-        delete_statement = delete(Match).where(Match.id == match_id)
-        await session.execute(delete_statement)
+        # 1. Perform the soft-delete update
+        update_statement = (
+            update(Match)
+            .where(Match.match_code == match_code)
+            .values(is_deleted=True)
+        )
+        
+        execution = await session.execute(update_statement)
+        rows_affected = execution.rowcount
+        
+        # 2. Commit the change
         await session.commit()
         
-        global_logger.info(f"Match deleted successfully. match_code: {match_code}, ID: {match_id}.")
+        # 3. Check for existence (404) based on rows affected
+        if rows_affected == 0:
+            global_logger.warning(f"Match not found: match_code={match_code}. Returning 404.")
+            # No rollback needed since nothing was changed.
+            raise HTTPException(
+                status_code=404,
+                detail=f'Match with match_code={match_code} not found.'
+            )
+
+        global_logger.info(f"Match soft-deleted successfully. match_code: {match_code}.")
         return DeleteMatchResponse(
-            response={'message': f'Match with match_code={match_code} deleted successfully!'}
+            response={'message': f'Match with match_code={match_code} soft-deleted successfully!'}
         )
-    except NoResultFound:
-        # Match not found
-        global_logger.warning(f"Match not found: match_code={match_code}. Returning 404.")
-        raise HTTPException(
-            status_code=404,
-            detail=f'Match with match_code={match_code} not found.'
-        )
-    except IntegrityError:
-        # Cannot delete due to existing foreign key dependencies (Questions, Answers, or Records belong to this Match)
-        await session.rollback()
-        global_logger.warning(f"Failed to delete Match {match_code} due to existing dependencies. Returning 409.")
-        raise HTTPException(
-            status_code=409,
-            detail=f'Match with match_code={match_code} cannot be deleted because dependent records (Questions, Answers, or Records) exist. Remove dependent records first.'
-        )
+    
+    except HTTPException:
+        # Re-raise explicit HTTPExceptions (like the 404)
+        raise
     except Exception:
+        # Rollback on any unexpected database error
         await session.rollback()
-        global_logger.exception(f'Unexpected error during deletion of Match {match_code}.')
+        global_logger.exception(f'Unexpected error during soft-deletion of Match {match_code}.')
         raise HTTPException(
             status_code=500,
-            detail=f'An unexpected server error occurred during Match deletion.'
+            detail=f'An unexpected server error occurred during Match soft-deletion.'
         )

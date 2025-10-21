@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -164,26 +164,39 @@ async def get_team_with_players_info_from_team_code_from_db(team_code: str, sess
 
 
 async def delete_team_from_team_code_from_db(team_code: str, session: AsyncSession) -> DeleteTeamResponse:
-    # We don't actually delete the player, just set the is_deleted=True
-    global_logger.info(f"DELETE request received for team with team_code={team_code}.")
+    # We don't actually delete the team, just set the is_deleted=True
+    global_logger.info(f"DELETE request received for team with team_code={team_code} (soft-delete).")
     try:
-        team_delete_query = select(Team).where(Team.team_code == team_code)
-        execution = await session.execute(team_delete_query)
-        team_found = execution.unique().scalar_one_or_none()
-        if team_found is None:
+        # 1. Use an efficient bulk update statement
+        update_query = (
+            update(Team)
+            .where(Team.team_code == team_code)
+            .values(is_deleted=True)
+        )
+        
+        execution = await session.execute(update_query)
+        rows_affected = execution.rowcount
+        
+        # 2. Commit the changes to the database
+        await session.commit()
+        
+        # 3. Check the count of updated rows for a 404 response
+        if rows_affected == 0:
+            # Nothing was updated, so no need to rollback.
             global_logger.warning(f"Team not found: team_code={team_code}. Returning 404.")
             raise HTTPException(
                 status_code=404,
                 detail=f'No team with team_code={team_code} existed'
             )
-        team_found.is_deleted = True
-        await session.commit()
-        await session.refresh(team_found)
-        global_logger.info(f"Team deleted successfully for team_code={team_code}")
+
+        global_logger.info(f"Team soft-deleted successfully for team_code={team_code}")
         return DeleteTeamResponse(response={"message": "Team deleted successfully!"})
+
     except HTTPException:
+        # Re-raise explicit HTTPExceptions (like the 404)
         raise
     except Exception:
+        # Rollback on any unexpected database error
         await session.rollback()
         global_logger.exception(f'Unexpected error during team deletion for team_code={team_code}.')
         raise HTTPException(

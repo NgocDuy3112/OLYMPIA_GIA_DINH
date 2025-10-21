@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import String, DateTime, ForeignKey, Numeric, UUID
+from sqlalchemy import String, Boolean, DateTime, ForeignKey, Numeric, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.dependencies.db import Base
@@ -20,6 +20,7 @@ class Answer(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
     content: Mapped[str] = mapped_column(String, nullable=True)
+    is_buzzed: Mapped[bool] = mapped_column(Boolean, nullable=True, default=False)
     timestamp: Mapped[float] = mapped_column(Numeric(5, 3), nullable=True)
 
     # Foreign Keys

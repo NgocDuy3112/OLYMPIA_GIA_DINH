@@ -1,7 +1,6 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
-from sqlalchemy.exc import NoResultFound
 
 from fastapi import HTTPException
 
@@ -190,4 +189,56 @@ async def get_all_records_from_match_code_from_db(match_code: str, session: Asyn
         raise HTTPException(
             status_code=500,
             detail=f'An unexpected error occurred while fetching records.'
+        )
+
+
+
+async def delete_all_records_from_match_code_in_db(match_code: str, session: AsyncSession) -> DeleteRecordsResponse:
+    global_logger.info(f"DELETE request received for player with match_code={match_code} (soft-delete).")
+    # 1. Get the match_id subquery
+    match_id_subquery = select(Match.id).where(Match.match_code == match_code).scalar_subquery()
+    
+    # 2. Check if any questions exist for the match (optional but good for 404 response)
+    # Using a select(literal(1)) for existence check is often more efficient
+    existence_query = select(Question.id).where(Question.match_id == match_id_subquery).limit(1)
+    exists_result = await session.execute(existence_query)
+    if not exists_result.scalar_one_or_none():
+        global_logger.warning(f"No records found for match with match_code={match_code} in the database. Returning 404.")
+        raise HTTPException(
+            status_code=404,
+            detail=f'No records found for match with match_code={match_code} in the database'
+        )
+
+    # 3. Perform the bulk soft-delete update
+    try:
+        update_query = (
+            update(Record)
+            .where(Record.match_id == match_id_subquery)
+            .values(is_deleted=True)
+            # Instructs SQLAlchemy to return the count of rows updated
+            .returning(Record.id)
+        )
+        
+        # execution_result contains the updated rows' primary keys (if supported/necessary)
+        execution_result = await session.execute(update_query)
+        deleted_count = execution_result.rowcount # Get the count of affected rows
+
+        # CRITICAL: Commit the transaction to save the changes
+        await session.commit() 
+        global_logger.info(f"Successfully soft-deleted {deleted_count} records for match_code={match_code}.")
+        return DeleteRecordsResponse(
+            response={
+                'message': f'Successfully soft-deleted {deleted_count} records for match_code={match_code}.'
+            }
+        )
+    except HTTPException:
+        # Re-raise explicit HTTPExceptions (like the 404 if placed inside the try block)
+        raise
+    except Exception:
+        # Rollback in case of any other error
+        await session.rollback()
+        global_logger.exception(f'Unexpected error occurred during soft-deletion of records for match_code={match_code}.')
+        raise HTTPException(
+            status_code=500,
+            detail=f'An unexpected error occurred during record deletion.'
         )

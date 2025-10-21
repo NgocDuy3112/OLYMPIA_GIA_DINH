@@ -30,3 +30,8 @@ class PutRecordResponse(BaseResponse):
 
 class GetRecordsResponse(BaseResponse):
     pass
+
+
+
+class DeleteRecordsResponse(BaseResponse):
+    pass

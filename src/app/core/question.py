@@ -21,6 +21,7 @@ COLUMN_NAMES = ['Code', 'Câu hỏi', 'Media', 'Đáp án', 'Giải thích', 'Ng
 XLSX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
+
 def convert_sheet_name_to_round_code(sheet_name: str) -> str:
     parts = sheet_name.split("_")
     return "".join([part[0] for part in parts])
@@ -80,10 +81,9 @@ async def post_question_to_db(request: PostQuestionRequest, session: AsyncSessio
 async def post_questions_file_to_db(file: UploadFile, session: AsyncSession) -> PostQuestionResponse:
     original_filename = file.filename
     global_logger.info(f"POST request received to upload questions file: {original_filename}.")
-    
     try:
         # 1. Validate File Name Format
-        pattern = r'^OGD3_M\d{2}\.xls(x)?$'
+        pattern = r'^OGD3_M[\w-]+\.xls(x)?$'
         if not re.match(pattern, original_filename):
             global_logger.warning(f"Invalid file name format: {original_filename}. Returning 400.")
             raise HTTPException(
@@ -110,13 +110,13 @@ async def post_questions_file_to_db(file: UploadFile, session: AsyncSession) -> 
             for row in rows_as_dicts:
                 questions_list.append(Question(
                     match_id=match_id,
-                    question_code=row['Code'],
-                    content=row['Câu hỏi'],
-                    media_sources=row['Media'],
-                    correct_answers=row['Đáp án'],
-                    explaination=row['Giải thích'],
-                    citation=row['Nguồn tham khảo'],
-                    note=row['Ghi chú']
+                    question_code=str(row['Code']),
+                    content=str(row['Câu hỏi']),
+                    correct_answers=str(row['Đáp án']),
+                    media_sources=str(row['Media']) if row['Media'] else None,
+                    explaination=str(row['Giải thích']) if row['Giải thích'] else None,
+                    citation=str(row['Nguồn tham khảo']) if row['Nguồn tham khảo'] else None,
+                    note=str(row['Ghi chú']) if row['Ghi chú'] else None
                 ))
                 
         # 4. Bulk Insert and Commit
@@ -169,8 +169,8 @@ async def get_all_questions_from_match_code_from_db(match_code: str, session: As
                         {
                             'question_code': question.question_code,
                             'content': question.content,
-                            'media_sources': question.media_sources,
                             'correct_answers': question.correct_answers,
+                            'media_sources': question.media_sources,
                             'explaination': question.explaination,
                             'citation': question.citation,
                             'note': question.note
@@ -196,7 +196,7 @@ async def get_all_questions_from_match_code_to_excel_file_from_db(match_code: st
         # 1. Validate Match existence
         match_id = await _get_id_by_code(session, Match, 'match_code', match_code, 'Match')
         global_logger.debug(f"Match ID: {match_id} for match_code: {match_code}")
-        response_file_name = f'OGD3_{match_code}.xlsx'
+        response_file_name = f'OGD3_{match_code}_exported.xlsx'
         excel_file_buffer = io.BytesIO()
         round_codes = [convert_sheet_name_to_round_code(sheet_name) for sheet_name in SHEET_NAMES]
         questions_by_round: dict[str, list] = {}
@@ -230,8 +230,8 @@ async def get_all_questions_from_match_code_to_excel_file_from_db(match_code: st
                     {
                         'Code': question.question_code,
                         'Câu hỏi': question.content,
-                        'Media': question.media_sources,
                         'Đáp án': question.correct_answers,
+                        'Media': question.media_sources,
                         'Giải thích': question.explaination,
                         'Nguồn tham khảo': question.citation,
                         'Ghi chú': question.note
@@ -260,4 +260,62 @@ async def get_all_questions_from_match_code_to_excel_file_from_db(match_code: st
         raise HTTPException(
             status_code=500,
             detail=f'An unexpected error occurred during file generation.'
+        )
+
+
+
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException
+# Assuming Question, Match, global_logger, and DeleteQuestionResponse are defined elsewhere
+
+async def delete_all_questions_from_match_code_in_db(match_code: str, session: AsyncSession) -> DeleteQuestionResponse:
+    global_logger.info(f"DELETE request received to soft-delete questions for match: {match_code}.")
+    
+    # 1. Get the match_id subquery
+    match_id_subquery = select(Match.id).where(Match.match_code == match_code).scalar_subquery()
+    
+    # 2. Check if any questions exist for the match (optional but good for 404 response)
+    # Using a select(literal(1)) for existence check is often more efficient
+    existence_query = select(Question.id).where(Question.match_id == match_id_subquery).limit(1)
+    exists_result = await session.execute(existence_query)
+    if not exists_result.scalar_one_or_none():
+        global_logger.warning(f"No questions found for match with match_code={match_code} in the database. Returning 404.")
+        raise HTTPException(
+            status_code=404,
+            detail=f'No questions found for match with match_code={match_code} in the database'
+        )
+
+    # 3. Perform the bulk soft-delete update
+    try:
+        update_query = (
+            update(Question)
+            .where(Question.match_id == match_id_subquery)
+            .values(is_deleted=True)
+            # Instructs SQLAlchemy to return the count of rows updated
+            .returning(Question.id)
+        )
+        
+        # execution_result contains the updated rows' primary keys (if supported/necessary)
+        execution_result = await session.execute(update_query)
+        deleted_count = execution_result.rowcount # Get the count of affected rows
+
+        # CRITICAL: Commit the transaction to save the changes
+        await session.commit() 
+        global_logger.info(f"Successfully soft-deleted {deleted_count} questions for match_code={match_code}.")
+        return DeleteQuestionResponse(
+            response={
+                'message': f'Successfully soft-deleted {deleted_count} questions for match_code={match_code}.'
+            }
+        )
+    except HTTPException:
+        # Re-raise explicit HTTPExceptions (like the 404 if placed inside the try block)
+        raise
+    except Exception:
+        # Rollback in case of any other error
+        await session.rollback()
+        global_logger.exception(f'Unexpected error occurred during soft-deletion of questions for match_code={match_code}.')
+        raise HTTPException(
+            status_code=500,
+            detail=f'An unexpected error occurred during question deletion.'
         )

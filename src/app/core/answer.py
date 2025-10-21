@@ -3,7 +3,7 @@ import json
 
 from decimal import Decimal
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, update
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,8 +30,9 @@ async def post_answer_to_db(request: PostAnswerRequest, session: AsyncSession, c
         question_id = await _get_id_by_code(session, Question, 'question_code', request.question_code, 'Question')
         # 2. Create the new Answer object
         new_answer = Answer(
-            content=request.content,
-            timestamp=round(request.timestamp, 3),
+            content=request.content if request.content else None,
+            timestamp=round(request.timestamp, 3) if request.timestamp else None,
+            is_buzzed=request.is_buzzed if request.is_buzzed else False,
             player_id=player_id,
             match_id=match_id,
             question_id=question_id
@@ -66,6 +67,69 @@ async def post_answer_to_db(request: PostAnswerRequest, session: AsyncSession, c
         raise HTTPException(
             status_code=500,
             detail=f'An unexpected error occurred: {e}'
+        )
+
+
+
+async def put_answer_to_db(request: PutAnswerRequest, session: AsyncSession) -> PutAnswerResponse:
+    global_logger.info(f"PUT request received to update answer for player: {request.player_code} in match: {request.match_code} with question: {request.question_code}.")
+    
+    try:
+        # Use subqueries to efficiently resolve the IDs required for filtering the Answer table.
+        # This allows us to perform the entire update in a single DB query.
+        player_id_subquery = select(Player.id).where(Player.player_code == request.player_code).scalar_subquery()
+        match_id_subquery = select(Match.id).where(Match.match_code == request.match_code).scalar_subquery()
+        question_id_subquery = select(Question.id).where(Question.question_code == request.question_code).scalar_subquery()
+        
+        # Build the efficient UPDATE statement
+        update_statement = (
+            update(Answer)
+            .where(
+                (Answer.player_id == player_id_subquery) &
+                (Answer.match_id == match_id_subquery) &
+                (Answer.question_id == question_id_subquery)
+            )
+            .values(
+                is_buzzed=request.is_buzzed,
+                content=request.content,
+                timestamp=round(request.timestamp, 3)
+            )
+        )
+        
+        execution = await session.execute(update_statement)
+        rows_affected = execution.rowcount
+        
+        # Commit the transaction to persist the update
+        await session.commit()
+        
+        # Check if the update was successful (i.e., if the answer was found)
+        if rows_affected == 0:
+            global_logger.warning(f"Answer not found: player={request.player_code}, match={request.match_code}, question={request.question_code}. Returning 404.")
+            # No rollback needed as nothing was committed.
+            raise HTTPException(
+                status_code=404,
+                detail=f'Answer not found for the given combination of codes.'
+            )
+
+        global_logger.info(f"Answer updated successfully. Rows affected: {rows_affected}")
+        return PutAnswerResponse(
+            response={
+                "message": "Answer updated successfully!", 
+                "player_code": request.player_code,
+                "match_code": request.match_code,
+                "question_code": request.question_code
+            }
+        )
+        
+    except HTTPException:
+        # Re-raise explicit 404/409 errors
+        raise
+    except Exception:
+        await session.rollback()
+        global_logger.exception(f'Unexpected error during answer update for player_code={request.player_code}, match_code={request.match_code}, question_code={request.question_code}.')
+        raise HTTPException(
+            status_code=500,
+            detail='An unexpected server error occurred during answer update.'
         )
 
 

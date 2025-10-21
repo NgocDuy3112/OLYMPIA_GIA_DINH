@@ -53,3 +53,18 @@ async def get_recent_answers_from_match_code(match_code: str, cache: Valkey=Depe
 )
 async def post_answer(request: PostAnswerRequest, session: AsyncSession=Depends(get_db), cache: Valkey=Depends(get_valkey_answers_cache)):
     return await post_answer_to_db(request, session, cache)
+
+
+
+@answer_router.put(
+    "/",
+    dependencies=[Depends(authorize_user)],
+    response_model=PutAnswerResponse,
+    responses={
+        200: {'model': PutAnswerResponse, 'description': 'Successfully update an answer'},
+        404: {'description': 'Not Found'},
+        500: {'description': 'Internal Server Error'}
+    }
+)
+async def put_answer(request: PutAnswerRequest, session: AsyncSession=Depends(get_db)):
+    return await put_answer_to_db(request, session)

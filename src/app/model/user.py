@@ -16,10 +16,10 @@ class RoleEnum(str, enum.Enum):
     admin = "admin"
 
 
+
 class User(Base):
     __tablename__ = "users"
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[RoleEnum] = mapped_column(Enum(RoleEnum), default=RoleEnum.guest)

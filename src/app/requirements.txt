@@ -5,8 +5,9 @@ valkey
 pandas
 openpyxl
 pydantic_settings
-passlib[bcrypt]
 pyjwt
+bcrypt==4.3.0
+passlib==1.7.0
 python-jose
 pytest
 pytest-mock

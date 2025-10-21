@@ -55,6 +55,7 @@ async def post_record(request: PostRecordRequest, session: AsyncSession=Depends(
     return await post_record_to_db(request, session)
 
 
+
 @record_router.put(
     "/",
     dependencies=[Depends(authorize_user)],

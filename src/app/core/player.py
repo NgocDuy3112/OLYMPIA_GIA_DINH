@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -168,26 +168,39 @@ async def get_player_from_player_code_from_db(
 
 
 async def delete_player_from_player_code_from_db(player_code: str, session: AsyncSession) -> DeletePlayerResponse:
-    # We don't actually delete the player, just set the is_deleted=True
-    global_logger.info(f"DELETE request received for player with player_code={player_code}.")
+    global_logger.info(f"DELETE request received for player with player_code={player_code} (soft-delete).")
     try:
-        player_delete_query = select(Player).where(Player.player_code == player_code)
-        execution = await session.execute(player_delete_query)
-        player_found = execution.unique().scalar_one_or_none()
-        if player_found is None:
+        # 1. Use an efficient bulk update statement
+        update_query = (
+            update(Player)
+            .where(Player.player_code == player_code)
+            .values(is_deleted=True)
+        )
+        
+        execution = await session.execute(update_query)
+        rows_affected = execution.rowcount
+        
+        # 2. Commit the changes to the database
+        await session.commit()
+        
+        # 3. Check the count of updated rows for a 404 response
+        if rows_affected == 0:
             global_logger.warning(f"Player not found: player_code={player_code}. Returning 404.")
+            # Note: We still commit/rollback on errors, but a 404 is an expected flow.
+            # No rollback needed here since nothing was changed.
             raise HTTPException(
                 status_code=404,
                 detail=f'No player with player_code={player_code} existed'
             )
-        player_found.is_deleted = True
-        await session.commit()
-        await session.refresh(player_found)
-        global_logger.info(f"Player deleted successfully for player_code={player_code}")
+
+        global_logger.info(f"Player soft-deleted successfully for player_code={player_code}")
         return DeletePlayerResponse(response={"message": "Player deleted successfully!"})
+
     except HTTPException:
+        # Re-raise explicit HTTPExceptions
         raise
     except Exception:
+        # Rollback on any unexpected database error
         await session.rollback()
         global_logger.exception(f'Unexpected error during player deletion for player_code={player_code}.')
         raise HTTPException(
