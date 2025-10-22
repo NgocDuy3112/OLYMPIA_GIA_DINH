@@ -40,6 +40,20 @@ async def get_all_records_from_match_code(match_code: str, session: AsyncSession
 
 
 
+@record_router.get(
+    "/match/export",
+    dependencies=[Depends(authorize_user)],
+    responses={
+        200: {'description': 'Successfully get all records from a match code to an Excel file'},
+        404: {'description': 'Not Found'},
+        500: {'description': 'Internal Server Error'}
+    }
+)
+async def get_all_records_from_match_code_to_excel_file(match_code: str, session: AsyncSession=Depends(get_db)):
+    return await get_all_records_from_match_code_from_db_exported_to_excel_file(match_code, session)
+
+
+
 @record_router.post(
     "/",
     dependencies=[Depends(authorize_user)],
