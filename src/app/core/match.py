@@ -76,7 +76,10 @@ async def get_all_matches_from_db(session: AsyncSession) -> GetMatchResponse:
 async def get_match_from_match_code_from_db(match_code: str, session: AsyncSession) -> GetMatchResponse:
     global_logger.info(f"GET request received for match: {match_code} with players info.")
     try:
-        match_query = select(Match).where(Match.match_code == match_code)
+        match_query = (
+            select(Match)
+            .where(Match.match_code == match_code)
+        )
         execution = await session.execute(match_query)
         result = execution.unique().scalar_one_or_none()
         if result is None:
@@ -93,14 +96,13 @@ async def get_match_from_match_code_from_db(match_code: str, session: AsyncSessi
                 'data': {
                     'match_code': match_code,
                     'match_name': result.match_name,
-                    
                 }
             }
         )
     except HTTPException:
         raise
     except Exception:
-        global_logger.exception(f'Unexpected error occurred while fetching match from match_code={match_code}.')
+        global_logger.exception(f'Unexpected error occurred while fetching match_code={match_code}.')
         raise HTTPException(
             status_code=500,
             detail=f'An unexpected error occurred while fetching match.'

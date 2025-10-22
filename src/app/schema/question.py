@@ -19,7 +19,7 @@ class PutQuestionRequest(BaseRequest):
     question_code: str
     content: str
     correct_answers: str
-    extra_info:  dict | None = None
+    extra_info: dict | None = None
 
 
 class PutQuestionResponse(BaseResponse):

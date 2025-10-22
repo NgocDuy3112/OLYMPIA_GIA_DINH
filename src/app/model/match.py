@@ -30,4 +30,4 @@ class Match(Base):
 
     # Relationships
     questions: Mapped[list["Question"]] = relationship(back_populates="match") # type: ignore
-    records: Mapped[list["Record"]] = relationship(back_populates='match') # type: ignore
+    records: Mapped[list["Record"]] = relationship(back_populates="match") # type: ignore

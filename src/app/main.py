@@ -16,9 +16,9 @@ from app.api import (
 from app.logger import global_logger
 
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    print("Application startup: Database engine initialized")
     global_logger.info("Application startup: Database engine initialized")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -40,12 +40,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(auth.auth_router)
+app.include_router(question.question_router)
 app.include_router(player.player_router)
 app.include_router(team.team_router)
 app.include_router(match.match_router)
 app.include_router(answer.answer_router)
 app.include_router(record.record_router)
-app.include_router(question.question_router)
 
 
 

@@ -96,20 +96,21 @@ async def get_all_players_from_db(session: AsyncSession) -> GetPlayerResponse:
         )
         execution = await session.execute(players_query)
         result = execution.unique().scalars().all()
+        
         if not result:
             global_logger.warning("No players found in the database. Returning 404.")
             raise HTTPException(
                 status_code=404,
                 detail='No players found!'
             )
+            
         global_logger.info(f"Successfully retrieved {len(result)} players.")
+            
         return GetPlayerResponse(
             response={
                 'data': [
                 {
-                    'player_code': res.player_code,
                     'player_name': res.player_name,
-                    'team_code': res.team.team_code if res.team else 'N/A',
                     'team_name': res.team.team_name if res.team else 'N/A'
                 }
                 for res in result]
@@ -149,9 +150,7 @@ async def get_player_from_player_code_from_db(
         return GetPlayerResponse(
             response={
                 'data': {
-                    'player_code': player_code,
                     'player_name': result.player_name,
-                    'team_code': result.team_code if result.team else 'N/A',
                     'team_name': result.team.team_name if result.team else 'N/A'
                 }
             }

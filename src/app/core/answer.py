@@ -21,21 +21,21 @@ from app.utils.get_id_by_code import _get_id_by_code
 
 
 
-async def post_answer_to_db(request: PostAnswerRequest, session: AsyncSession, cache: Valkey) -> PostAnswerResponse:
+async def post_answer_to_db(request: PostAnswerRequest, session: AsyncSession) -> PostAnswerResponse:
     global_logger.info(f"POST request received to record answer for player: {request.player_code} in match: {request.match_code}.")
+    
     try:
         # 1. Validate Player and Match existence
         player_id = await _get_id_by_code(session, Player, 'player_code', request.player_code, 'Player')
         match_id = await _get_id_by_code(session, Match, 'match_code', request.match_code, 'Match')
-        question_id = await _get_id_by_code(session, Question, 'question_code', request.question_code, 'Question')
+        
         # 2. Create the new Answer object
         new_answer = Answer(
             content=request.content if request.content else None,
             timestamp=round(request.timestamp, 3) if request.timestamp else None,
             is_buzzed=request.is_buzzed if request.is_buzzed else False,
             player_id=player_id,
-            match_id=match_id,
-            question_id=question_id
+            match_id=match_id
         )
         session.add(new_answer)
         global_logger.debug(f"Answer object created and added to session.")
@@ -44,16 +44,7 @@ async def post_answer_to_db(request: PostAnswerRequest, session: AsyncSession, c
         await session.commit()
         await session.refresh(new_answer)
         global_logger.info(f"Answer recorded successfully. player_id={player_id}, match_id={match_id}")
-        cache_key = f"answers:{request.match_code}:{request.player_code}"
-        new_entry = {
-            "content": new_answer.content,
-            "timestamp": float(new_answer.timestamp) if isinstance(new_answer.timestamp, Decimal) else new_answer.timestamp,
-            "player_code": request.player_code,
-            "match_code": request.match_code,
-            "question_code": request.question_code
-        }
-        await cache.set(cache_key, json.dumps(new_entry), ex=60)
-        global_logger.info(f"Cached answer for {cache_key}")
+        
         return PostAnswerResponse(
             response={
                 'messsage': f'Add an answer of the player with player_code={request.player_code} and match_code={request.match_code} successfully!'
@@ -66,7 +57,103 @@ async def post_answer_to_db(request: PostAnswerRequest, session: AsyncSession, c
         global_logger.exception(f'Unexpected error during answer creation/commit for player_code={request.player_code}, match_code={request.match_code}.')
         raise HTTPException(
             status_code=500,
-            detail=f'An unexpected error occurred: {e}'
+            detail=f'An unexpected error occurred during answer creation.'
+        )
+
+
+
+async def get_all_answers_from_match_code_from_db(
+    match_code: str,
+    session: AsyncSession
+) -> GetAnswerResponse:
+    global_logger.info(f"GET request received for latest answers of match_code={match_code}.")
+    try:
+        # 1️⃣ Validate match existence
+        match_id = await _get_id_by_code(session, Match, 'match_code', match_code, 'Match')
+        
+        answers_query = (
+            select(Answer)
+            .options(joinedload(Answer.player))
+        )
+        
+
+        # 2️⃣ Subquery — latest updated_at per (player_id, question_id)
+        subq = (
+            select(
+                Answer.player_id,
+                Answer.question_id,
+                func.max(Answer.updated_at).label("latest_updated_at")
+            )
+            .where(Answer.match_id == match_id)
+            .order_by(Answer.timestamp.desc())
+            .group_by(Answer.player_id, Answer.question_id)
+            .subquery()
+        )
+
+        # 3️⃣ Join main Answer table with subquery to get latest full records
+        latest_answers_query = (
+            select(Answer)
+            .join(
+                subq,
+                (Answer.player_id == subq.c.player_id)
+                & (Answer.question_id == subq.c.question_id)
+                & (Answer.updated_at == subq.c.latest_updated_at)
+            )
+            .options(joinedload(Answer.player), joinedload(Answer.question))
+            .order_by(Answer.player_id.asc(), Answer.question_id.asc())
+        )
+        execution = await session.execute(answers_query)
+        result = execution.unique().scalars().all()
+
+        execution = await session.execute(latest_answers_query)
+        results = execution.scalars().all()
+
+        if not results:
+            raise HTTPException(
+                status_code=404,
+                detail=f'No answers found for match_code={match_code}'
+            )
+
+        global_logger.info(f"Retrieved {len(results)} latest answers for match_code={match_code}.")
+
+        # 4️⃣ Build clean JSON-safe response
+        answers = [
+            {
+                'content': res.content,
+                'timestamp': res.timestamp.isoformat(),
+                'player_code': res.player.player_code,
+                "player_code": res.player.player_code if res.player else None,
+                "question_code": res.question.question_code if res.question else None,
+                "content": res.content,
+                "timestamp": float(res.timestamp) if res.timestamp is not None else None,
+            }
+            for res in results
+        ]
+        
+        global_logger.info(f"Successfully retrieved {len(answers)} answers for match: {match_code}.")
+        
+
+        # 5️⃣ Return structured response
+        return GetAnswerResponse(
+            response={
+                'data': {
+                    'match_code': match_code,
+                    'answers': answers
+                },
+                "match_code": match_code,
+                "answers": answers
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception:
+        global_logger.exception(f'Unexpected error occurred while fetching answers for match_code={match_code}.')
+    except Exception as e:
+        global_logger.exception(f"Error while retrieving latest answers for match_code={match_code}.")
+        raise HTTPException(
+            status_code=500,
+            detail=f'An unexpected error occurred while fetching answers.'
         )
 
 
@@ -178,79 +265,4 @@ async def get_recent_answers_from_match_code_from_cache(match_code: str, cache: 
         raise HTTPException(
             status_code=500,
             detail=f'An unexpected error occurred during answer creation.'
-        )
-
-
-
-async def get_all_answers_from_match_code_from_db(
-    match_code: str,
-    session: AsyncSession
-) -> GetAnswerResponse:
-    global_logger.info(f"GET request received for latest answers of match_code={match_code}.")
-    try:
-        # 1️⃣ Validate match existence
-        match_id = await _get_id_by_code(session, Match, 'match_code', match_code, 'Match')
-
-        # 2️⃣ Subquery — latest updated_at per (player_id, question_id)
-        subq = (
-            select(
-                Answer.player_id,
-                Answer.question_id,
-                func.max(Answer.updated_at).label("latest_updated_at")
-            )
-            .where(Answer.match_id == match_id)
-            .group_by(Answer.player_id, Answer.question_id)
-            .subquery()
-        )
-
-        # 3️⃣ Join main Answer table with subquery to get latest full records
-        latest_answers_query = (
-            select(Answer)
-            .join(
-                subq,
-                (Answer.player_id == subq.c.player_id)
-                & (Answer.question_id == subq.c.question_id)
-                & (Answer.updated_at == subq.c.latest_updated_at)
-            )
-            .options(joinedload(Answer.player), joinedload(Answer.question))
-            .order_by(Answer.player_id.asc(), Answer.question_id.asc())
-        )
-
-        execution = await session.execute(latest_answers_query)
-        results = execution.scalars().all()
-
-        if not results:
-            raise HTTPException(
-                status_code=404,
-                detail=f'No answers found for match_code={match_code}'
-            )
-
-        global_logger.info(f"Retrieved {len(results)} latest answers for match_code={match_code}.")
-
-        # 4️⃣ Build clean JSON-safe response
-        answers = [
-            {
-                "player_code": res.player.player_code if res.player else None,
-                "question_code": res.question.question_code if res.question else None,
-                "content": res.content,
-                "timestamp": float(res.timestamp) if res.timestamp is not None else None,
-            }
-            for res in results
-        ]
-
-        # 5️⃣ Return structured response
-        return GetAnswerResponse(
-            response={
-                "match_code": match_code,
-                "answers": answers
-            }
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        global_logger.exception(f"Error while retrieving latest answers for match_code={match_code}.")
-        raise HTTPException(
-            status_code=500,
-            detail=f"An unexpected error occurred: {e}"
         )

@@ -28,7 +28,6 @@ async def post_question_to_db(request: PostQuestionRequest, session: AsyncSessio
     global_logger.info(f"POST question {request.question_code} for match {request.match_code}")
     try:
         match_id = await _get_id_by_code(session, Match, 'match_code', request.match_code, 'Match')
-
         new_question = Question(
             match_id=match_id,
             question_code=request.question_code,
@@ -36,7 +35,6 @@ async def post_question_to_db(request: PostQuestionRequest, session: AsyncSessio
             correct_answers=request.correct_answers,
             extra_info=request.extra_info or {}
         )
-
         session.add(new_question)
         await session.commit()
         await session.refresh(new_question)
@@ -51,7 +49,6 @@ async def post_question_to_db(request: PostQuestionRequest, session: AsyncSessio
 
 
 
-
 async def post_questions_file_to_db(file: UploadFile, session: AsyncSession) -> PostQuestionResponse:
     filename = file.filename
     global_logger.info(f"Uploading file: {filename}")
@@ -59,35 +56,35 @@ async def post_questions_file_to_db(file: UploadFile, session: AsyncSession) -> 
         pattern = r'^OGD3_M[\w-]+\.xls(x)?$'
         if not re.match(pattern, filename):
             raise HTTPException(400, 'Invalid file name format: OGD3_Mxx.xls(x)')
-
         match_code = filename.split(".")[0].split("_")[1]
         match_id = await _get_id_by_code(session, Match, 'match_code', match_code, 'Match')
-
         content = await file.read()
         io_buf = io.BytesIO(content)
         questions = []
-
         for sheet in SHEET_NAMES:
             io_buf.seek(0)
             df = pd.read_excel(io_buf, sheet)
             for row in df.to_dict('records'):
-                extra_info = {
-                    "media_sources": row.get("Media"),
-                    "explaination": row.get("Giải thích"),
-                    "citation": row.get("Nguồn tham khảo"),
-                    "note": row.get("Ghi chú")
-                }
+                extra_info = {}
+                for k, col_name in {
+                    "media_sources": "Media",
+                    "explaination": "Giải thích",
+                    "citation": "Nguồn tham khảo",
+                    "note": "Ghi chú"
+                }.items():
+                    val = row.get(col_name)
+                    if pd.notna(val): extra_info[k] = val
                 questions.append(Question(
                     match_id=match_id,
                     question_code=str(row['Code']),
                     content=str(row['Câu hỏi']),
                     correct_answers=str(row['Đáp án']),
-                    extra_info={k: v for k, v in extra_info.items() if v}
+                    extra_info=extra_info
                 ))
 
         session.add_all(questions)
         await session.commit()
-        return PostQuestionResponse(response={'message': f'Uploaded {len(questions)} questions successfully'})
+        return PostQuestionResponse(response={'message': f'Uploaded {len(questions)} questions for match_code={match_code} successfully'})
     except IntegrityError:
         await session.rollback()
         raise HTTPException(409, 'Duplicate question codes found in file')
@@ -105,7 +102,6 @@ async def get_all_questions_from_match_code_from_db(match_code: str, session: As
         questions = result.scalars().all()
         if not questions:
             raise HTTPException(404, f'No questions found for match {match_code}')
-
         return GetQuestionResponse(response={
             'data': {
                 'match_code': match_code,
@@ -154,10 +150,10 @@ async def get_all_questions_from_match_code_to_excel_file_from_db(match_code: st
                         'Code': q.question_code,
                         'Câu hỏi': q.content,
                         'Đáp án': q.correct_answers,
-                        'Media': info.get('media_sources'),
-                        'Giải thích': info.get('explaination'),
-                        'Nguồn tham khảo': info.get('citation'),
-                        'Ghi chú': info.get('note')
+                        'Media': info.get('media_sources') if info.get('media_sources') else '',
+                        'Giải thích': info.get('explaination') if info.get('explaination') else '',
+                        'Nguồn tham khảo': info.get('citation') if info.get('citation') else '',
+                        'Ghi chú': info.get('note') if info.get('note') else ''
                     })
                 pd.DataFrame(data).to_excel(writer, sheet_name=sheet, index=False)
 
@@ -178,7 +174,6 @@ async def delete_all_questions_from_match_code_in_db(match_code: str, session: A
     exists = await session.execute(select(Question.id).where(Question.match_id == match_id_sub).limit(1))
     if not exists.scalar_one_or_none():
         raise HTTPException(404, f'No questions found for match {match_code}')
-
     try:
         q = update(Question).where(Question.match_id == match_id_sub).values(is_deleted=True)
         res = await session.execute(q)

@@ -22,12 +22,10 @@ class Answer(Base):
     content: Mapped[str] = mapped_column(String, nullable=True)
     is_buzzed: Mapped[bool] = mapped_column(Boolean, nullable=True, default=False)
     timestamp: Mapped[float] = mapped_column(Numeric(5, 3), nullable=True)
-
     # Foreign Keys
     player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id"), nullable=False)
     match_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("matches.id"), nullable=False)
     question_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("questions.id"), nullable=False)
-
     # Relationships
     player: Mapped["Player"] = relationship(back_populates='answers') # type: ignore
     question: Mapped["Question"] = relationship(back_populates='answers') # type: ignore
