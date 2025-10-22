@@ -3,6 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from fastapi import HTTPException
+from fastapi.responses import StreamingResponse
+import io
+import pandas as pd
 
 from app.model.player import Player
 from app.model.match import Match
@@ -11,6 +14,9 @@ from app.model.question import Question
 from app.schema.record import *
 from app.logger import global_logger
 from app.utils.get_id_by_code import _get_id_by_code
+
+
+MEDIA_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 
 
@@ -107,6 +113,7 @@ async def get_all_records_from_player_code_from_db(player_code: str, session: As
             select(Record)
             .where(Record.player_id == player_found.id)
             .options(joinedload(Record.match))
+            .options(joinedload(Record.question))
             .order_by(Record.created_at.desc())
         )
         execution = await session.execute(records_query)
@@ -122,6 +129,7 @@ async def get_all_records_from_player_code_from_db(player_code: str, session: As
                     'records': [
                         {
                             'match_code': record.match.match_code if record.match else 'N/A', # Access match_code via relationship
+                            'question_code': record.question.question_code if record.question else 'N/A',
                             'd_score_earned': record.d_score_earned,
                             'updated_at': record.updated_at.isoformat()
                         } 
@@ -160,6 +168,7 @@ async def get_all_records_from_match_code_from_db(match_code: str, session: Asyn
             select(Record)
             .where(Record.match_id == match_found.id) # Use match_found.id
             .options(joinedload(Record.player)) # Assuming relation is to 'player'
+            .options(joinedload(Record.question))
             .order_by(Record.created_at.desc())
         )
         execution = await session.execute(records_query)
@@ -175,6 +184,7 @@ async def get_all_records_from_match_code_from_db(match_code: str, session: Asyn
                     'records': [
                         {
                             'player_code': record.player.player_code if record.player else 'N/A',
+                            'question_code': record.question.question_code if record.question else 'N/A',
                             'd_score_earned': record.d_score_earned,
                             'updated_at': record.updated_at.isoformat()
                         }
@@ -182,6 +192,72 @@ async def get_all_records_from_match_code_from_db(match_code: str, session: Asyn
                 }
             }
         )
+    except HTTPException:
+        raise
+    except Exception:
+        global_logger.exception(f'Unexpected error occurred while fetching records for match_code={match_code}.')
+        raise HTTPException(
+            status_code=500,
+            detail=f'An unexpected error occurred while fetching records.'
+        )
+
+
+
+async def get_all_records_from_match_code_from_db_exported_to_excel_file(match_code: str, session: AsyncSession) -> StreamingResponse:
+    global_logger.info(f"GET request received for all records of match: {match_code}, exporting to Excel.")
+    try:
+        buffer = io.BytesIO()
+        response_name = f'OGD3_{match_code}_records_exported.xlsx'
+        
+        # 1. Find Match ID and Info
+        match_query = select(Match).where(Match.match_code == match_code)
+        execution = await session.execute(match_query)
+        match_found = execution.unique().scalar_one_or_none()
+        if match_found is None:
+            global_logger.warning(f"Match not found: match_code={match_code}. Returning 404.")
+            raise HTTPException(
+                status_code=404,
+                detail=f'Match with match_code={match_code} not found!'
+            )
+
+        # 2. Query Records
+        records_query = (
+            select(Record)
+            .where(Record.match_id == match_found.id)
+            .options(joinedload(Record.player))
+            .options(joinedload(Record.question))
+            .order_by(Record.created_at.desc())
+        )
+        execution = await session.execute(records_query)
+        records_list = execution.scalars().all()
+        
+        global_logger.info(f"Successfully retrieved {len(records_list)} records for match: {match_code}.")
+        
+        with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+            data = []
+            for record in records_list:
+                data.append({
+                    'Mốc thời gian cập nhật': record.updated_at.isoformat(),
+                    'Mã câu hỏi': record.question.question_code if record.question else 'N/A',
+                    'Mã thí sinh': record.player.player_code if record.player else 'N/A',
+                    'Điểm D nhận được': record.d_score_earned,
+                })
+            
+            # --- CRITICAL FIX START: Convert data to DataFrame and write to Excel ---
+            if data:
+                df = pd.DataFrame(data)
+                df.to_excel(writer, index=False, sheet_name=match_found.match_code[:31]) # Use match_code as sheet name, truncated to 31 chars
+            # --- CRITICAL FIX END ---
+
+        # --- CRITICAL FIX START: Seek buffer and return StreamingResponse ---
+        buffer.seek(0)
+        return StreamingResponse( 
+            content=buffer,
+            media_type=MEDIA_TYPE,
+            headers={'Content-Disposition': f'attachment; filename="{response_name}"'}
+        )
+        # --- CRITICAL FIX END ---
+        
     except HTTPException:
         raise
     except Exception:
