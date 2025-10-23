@@ -23,8 +23,10 @@ class Question(Base):
     extra_info: Mapped[dict] = mapped_column(JSONB, nullable=True)  # JSONB column
     is_used: Mapped[bool] = mapped_column(Boolean, default=False)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
     # Foreign Keys
     match_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('matches.id'), nullable=False)
+
     # Relationships
     match: Mapped["Match"] = relationship(back_populates='questions') # type: ignore
     answers: Mapped[list["Answer"]] = relationship(back_populates='question') # type: ignore

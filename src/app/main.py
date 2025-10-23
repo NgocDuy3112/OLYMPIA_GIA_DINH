@@ -11,14 +11,14 @@ from app.api import (
     answer,
     record,
     question,
-    auth
+    auth,
+    scoreboard
 )
 from app.logger import global_logger
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Application startup: Database engine initialized")
     global_logger.info("Application startup: Database engine initialized")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -46,6 +46,7 @@ app.include_router(team.team_router)
 app.include_router(match.match_router)
 app.include_router(answer.answer_router)
 app.include_router(record.record_router)
+app.include_router(scoreboard.scoreboard_router)
 
 
 
