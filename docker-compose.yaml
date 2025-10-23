@@ -8,7 +8,7 @@ services:
     networks:
       - ogd3-network
     volumes:
-      - ./data/postgresql/ogd3:/var/lib/postgresql/data
+      - ./database/postgresql/ogd3:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
@@ -29,7 +29,7 @@ services:
       - "6379:6379"
     volumes:
       - ./configs/valkey.conf:/configs/valkey.conf
-      - ./data/valkey:/data
+      - ./database/valkey:/data
     command: valkey-server /configs/valkey.conf
     networks:
       - ogd3-network
@@ -53,6 +53,8 @@ services:
       - "8000:8000"
     depends_on:
       postgresql:
+        condition: service_started
+      valkey:
         condition: service_started
     networks:
       - ogd3-network

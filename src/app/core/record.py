@@ -2,9 +2,12 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
+from valkey.asyncio import Valkey
+
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 import io
+import json
 import pandas as pd
 
 from app.model.player import Player
@@ -20,7 +23,7 @@ MEDIA_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 
 
-async def post_record_to_db(request: PostRecordRequest, session: AsyncSession) -> PostRecordResponse:
+async def post_record_to_db(request: PostRecordRequest, cache: Valkey, session: AsyncSession) -> PostRecordResponse:
     global_logger.info(f"POST request received to create record for player: {request.player_code} in match: {request.match_code}.")
     try:
         # 1. Validate Player and Match existence
@@ -43,8 +46,28 @@ async def post_record_to_db(request: PostRecordRequest, session: AsyncSession) -
         await session.commit()
         await session.refresh(new_record)
         global_logger.info(f"Record created successfully. record_id={new_record.id}")
+    
+        # 4. Update cummulative D score in cache
+        valkey_key = f"scoreboard:{request.match_code}"
+        try:
+            await cache.hincrby(valkey_key, request.player_code, request.d_score_earned)
+            new_total_raw = await cache.hget(valkey_key, request.player_code)
+            new_total_score = int(new_total_raw or 0)
+            event = {
+                "type": "player_score_updated",
+                "match_code": request.match_code,
+                "player_code": request.player_code,
+                "d_score_earned": request.d_score_earned,
+                "new_total_score": new_total_score
+            }
+            await cache.publish(f"match:{request.match_code}:updates", json.dumps(event))
+            global_logger.info(f"Cache updated {request.player_code} {request.d_score_earned:+d} = {new_total_score} (match={request.match_code})")
+        except Exception as valkey_err:
+            global_logger.warning(f"Failed to update scoreboard for match={request.match_code}, player={request.player_code}: {valkey_err}")
         return PostRecordResponse(
-            response={'message': f'Add a record with player_code={request.player_code}, match_code={request.match_code}, question_code={request.question_code} successfully!'}
+            response={
+                "message": f"Record created successfully for player={request.player_code}, match={request.match_code}, question={request.question_code}."
+            }
         )
     except HTTPException:
         raise
@@ -58,7 +81,7 @@ async def post_record_to_db(request: PostRecordRequest, session: AsyncSession) -
 
 
 
-async def put_record_to_db(request: PutRecordRequest, session: AsyncSession) -> PutRecordResponse:
+async def put_record_to_db(request: PutRecordRequest, cache: Valkey, session: AsyncSession) -> PutRecordResponse:
     global_logger.info(f"PUT request received to update record for player: {request.player_code} in match: {request.match_code}.")
     try:
         player_id = await _get_id_by_code(session, Player, 'player_code', request.player_code, 'Player')
@@ -77,10 +100,30 @@ async def put_record_to_db(request: PutRecordRequest, session: AsyncSession) -> 
         record_found = execution.scalar_one_or_none()
         if record_found is None:
             raise HTTPException(status_code=404, detail="Record not found for the given player_code, match_code and question_code.")
-        record_found.d_score_earned = request.d_score_earned
+        old_score = int(record_found.d_score_earned or 0)
+        new_score = int(request.d_score_earned)
+        delta = new_score - old_score
+        global_logger.debug(f"Score change computed: old={old_score}, new={new_score}, delta={delta}")
+        record_found.d_score_earned = new_score
         await session.commit()
         await session.refresh(record_found)
         global_logger.info(f"Record updated successfully for player_code={request.player_code}, match_code={request.match_code}, question_code={request.question_code}")
+        try:
+            valkey_key = f"scoreboard:{request.match_code}"
+            await cache.hincrby(valkey_key, request.player_code, delta)
+            new_total_raw = await cache.hget(valkey_key, request.player_code)
+            new_total_score = int(new_total_raw or 0)
+            event = {
+                "type": "player_score_updated",
+                "match_code": request.match_code,
+                "player_code": request.player_code,
+                "d_score_earned": request.d_score_earned,
+                "new_total_score": new_total_score
+            }
+            await cache.publish(f"match:{request.match_code}:updates", json.dumps(event))
+            global_logger.info(f"Cache updated: {request.player_code} {old_score} -> {new_score} = {new_total_score} (match={request.match_code})")
+        except Exception as valkey_err:
+            global_logger.warning(f"Failed to update scoreboard for match={request.match_code}, player={request.player_code}: {valkey_err}")
         return PutRecordResponse(response={"message": "Record updated successfully!"})
     except HTTPException:
         raise
@@ -246,7 +289,7 @@ async def get_all_records_from_match_code_from_db_exported_to_excel_file(match_c
             # --- CRITICAL FIX START: Convert data to DataFrame and write to Excel ---
             if data:
                 df = pd.DataFrame(data)
-                df.to_excel(writer, index=False, sheet_name=match_found.match_code[:31]) # Use match_code as sheet name, truncated to 31 chars
+                df.to_excel(writer, index=False, sheet_name=match_found.match_code)
             # --- CRITICAL FIX END ---
 
         # --- CRITICAL FIX START: Seek buffer and return StreamingResponse ---

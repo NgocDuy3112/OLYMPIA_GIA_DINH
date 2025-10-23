@@ -27,5 +27,5 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 
-async def get_valkey_answers_cache() -> Valkey:
+async def get_valkey_cache() -> Valkey:
     return Valkey.from_url(settings.VALKEY_ANSWERS_CACHE_URL)
