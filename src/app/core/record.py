@@ -23,6 +23,9 @@ from app.utils.ws_event import publish_ws_event
 MEDIA_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 
+MEDIA_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+
 
 async def post_record_to_db(request: PostRecordRequest, cache: Valkey, session: AsyncSession) -> PostRecordResponse:
     global_logger.info(f"POST request received to create record for player: {request.player_code} in match: {request.match_code}.")
