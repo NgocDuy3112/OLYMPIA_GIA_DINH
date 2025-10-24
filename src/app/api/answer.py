@@ -12,6 +12,7 @@ answer_router = APIRouter(prefix='/answers', tags=['Câu trả lời'])
 
 @answer_router.post(
     "/", 
+    dependencies=[Depends(authorize_user)],
     response_model=PostAnswerResponse,
     responses={
         200: {'model': PostAnswerResponse, 'description': 'Successfully upload an answer'},

@@ -17,6 +17,10 @@ from app.model.question import Question
 from app.schema.record import *
 from app.logger import global_logger
 from app.utils.get_id_by_code import _get_id_by_code
+from app.utils.ws_event import publish_ws_event
+
+
+MEDIA_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 
 MEDIA_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -60,7 +64,7 @@ async def post_record_to_db(request: PostRecordRequest, cache: Valkey, session: 
                 "d_score_earned": request.d_score_earned,
                 "new_total_score": new_total_score
             }
-            await cache.publish(f"match:{request.match_code}:updates", json.dumps(event))
+            await publish_ws_event(cache, request.match_code, event)
             global_logger.info(f"Cache updated {request.player_code} {request.d_score_earned:+d} = {new_total_score} (match={request.match_code})")
         except Exception as valkey_err:
             global_logger.warning(f"Failed to update scoreboard for match={request.match_code}, player={request.player_code}: {valkey_err}")
@@ -120,7 +124,7 @@ async def put_record_to_db(request: PutRecordRequest, cache: Valkey, session: As
                 "d_score_earned": request.d_score_earned,
                 "new_total_score": new_total_score
             }
-            await cache.publish(f"match:{request.match_code}:updates", json.dumps(event))
+            await publish_ws_event(cache, request.match_code, event)
             global_logger.info(f"Cache updated: {request.player_code} {old_score} -> {new_score} = {new_total_score} (match={request.match_code})")
         except Exception as valkey_err:
             global_logger.warning(f"Failed to update scoreboard for match={request.match_code}, player={request.player_code}: {valkey_err}")
@@ -132,7 +136,7 @@ async def put_record_to_db(request: PutRecordRequest, cache: Valkey, session: As
         global_logger.exception(f'Unexpected error during record update for player_code={request.player_code}, match_code={request.match_code}.')
         raise HTTPException(
             status_code=500,
-            detail=f'An unexpected error occurred during record creation.'
+            detail=f'An unexpected error occurred during record update.'
         )
 
 
