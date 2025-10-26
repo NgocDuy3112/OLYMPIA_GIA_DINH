@@ -1,5 +1,6 @@
 import json
 import time
+import asyncio
 from valkey.asyncio import Valkey
 from fastapi.websockets import WebSocket, WebSocketDisconnect
 
@@ -8,37 +9,39 @@ from app.logger import global_logger
 
 
 
-async def trigger_start_time(
-    cache: Valkey,
-    match_code: str,
-    round_name: str,
-    question_code: str,
-    event_type: str = "new_question",
-):
-    """
-    Ghi lại mốc thời gian bắt đầu câu hỏi hoặc bật chuông,
-    đồng thời broadcast event cho toàn hệ thống.
-    """
-    start_time = time.time()
-    key = f"match:{match_code}:start_time"
-
+async def listen_to_valkey_pubsub(subscriber, match_code, manager):
     try:
-        await cache.set(key, start_time)
-        global_logger.info(f"[START] Set start_time={start_time} for match={match_code}")
-        event = {
-            "type": event_type,
-            "match_code": match_code,
-            "round": round_name,
-            "question_code": question_code,
-            "start_time": start_time,
-        }
-        await cache.publish(f"match:{match_code}:updates", json.dumps(event))
-        global_logger.info(f"[WS] Published {event_type} event for match={match_code}")
-
-        return {"message": f"{event_type} triggered", "start_time": start_time}
+        while True:
+            message = await subscriber.get_message(ignore_subscribe_messages=True) 
+            if message and message.get("type") == "message":
+                try:
+                    data = json.loads(message["data"])
+                    await manager.broadcast(match_code, data)
+                except Exception as e:
+                    global_logger.error(f"[WS] Invalid Valkey message in listener: {e}")
     except Exception as e:
-        global_logger.error(f"[START] Failed to trigger start_time for match={match_code}: {e}")
-        raise
+        global_logger.error(f"[WS] PubSub listener failed: {e}")
+
+
+
+async def listen_to_websocket_client(websocket: WebSocket, match_code: str, valkey: Valkey):
+    try:
+        while True:
+            # Lắng nghe tin nhắn từ client. Nếu không có tin nhắn, tác vụ này sẽ ngủ.
+            client_msg = await websocket.receive_json() 
+            event_type = client_msg.get("type")
+            player_code = client_msg.get("player_code")
+            global_logger.debug(f"[WS] From client: {client_msg}")
+            
+            # Check if locked (no more buzz/answer allowed)
+            locked = await valkey.get(f"match:{match_code}:locked")
+            if locked == b"1" or locked == "1":
+                await websocket.send_json({"type": "answer_rejected", "reason": "time_up"})
+                continue
+    except WebSocketDisconnect:
+        raise 
+    except Exception as e:
+        global_logger.error(f"[WS] Client listener failed: {e}")
 
 
 
@@ -46,39 +49,16 @@ async def handle_match_websocket(websocket: WebSocket, match_code: str, valkey: 
     await manager.connect(match_code, websocket)
     subscriber = valkey.pubsub()
     await subscriber.subscribe(f"match:{match_code}:updates")
-    global_logger.info(f"[WS] Subscribed to Redis channel match:{match_code}:updates")
+    global_logger.info(f"[WS] Client connected to match={match_code}")
 
     try:
-        while True:
-            message = await subscriber.get_message(ignore_subscribe_messages=True, timeout=0.1)
-            if message and message.get("type") == "message":
-                try:
-                    data = json.loads(message["data"])
-                    await manager.broadcast(match_code, data)
-                except Exception as e:
-                    global_logger.error(f"[WS] Invalid message from Redis: {e}")
-
-            try:
-                client_msg = await websocket.receive_json()
-                global_logger.debug(f"[WS] Received from client: {client_msg}")
-                event_type = client_msg.get("type")
-                if event_type == "buzz":
-                    event = {
-                        "type": "player_buzzed",
-                        "player_code": client_msg["player_code"],
-                    }
-                    await valkey.publish(f"match:{match_code}:updates", json.dumps(event))
-                elif event_type == "answer":
-                    event = {
-                        "type": "player_answered",
-                        "player_code": client_msg["player_code"],
-                        "answer": client_msg["answer"],
-                    }
-                    await valkey.publish(f"match:{match_code}:updates", json.dumps(event))
-            except Exception:
-                pass
-
+        await asyncio.gather(
+            listen_to_valkey_pubsub(subscriber, match_code, manager),
+            listen_to_websocket_client(websocket, match_code, valkey)
+        )
     except WebSocketDisconnect:
+        pass
+    finally:
         manager.disconnect(match_code, websocket)
         await subscriber.unsubscribe(f"match:{match_code}:updates")
         global_logger.info(f"[WS] Disconnected from match={match_code}")

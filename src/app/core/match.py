@@ -3,9 +3,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
+from valkey.asyncio import Valkey
+
 from fastapi import HTTPException
 
 from app.model.match import Match
+from app.utils.auto_time import trigger_start_time
 from app.schema.match import *
 from app.logger import global_logger
 

@@ -11,7 +11,8 @@ class ConnectionManager:
         self.active_connections: dict[str, list[WebSocket]] = {}
 
     async def connect(self, match_code: str, websocket: WebSocket):
-        await websocket.accept()
+        if not websocket.application_state.value == 1:  # 0=CONNECTING, 1=CONNECTED
+            await websocket.accept()
         self.active_connections.setdefault(match_code, []).append(websocket)
         global_logger.info(f"Connected websocket for match_code={match_code}. Total connections: {len(self.active_connections[match_code])}")
 
