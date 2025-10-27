@@ -26,16 +26,25 @@ async def get_recent_cumulative_timeline_scoreboard_from_cache(match_code: str, 
     cache_key = f"scoreboard:{match_code}"
     global_logger.info(f"Attempting to retrieve scoreboard for match={match_code} from Valkey key: {cache_key}")
     try:
-        cached_data = await cache.get(cache_key)
-        if cached_data is None:
+        scoreboard_hash = await cache.hgetall(cache_key)
+        if scoreboard_hash is None:
             global_logger.info(f"Scoreboard not found in cache for match={match_code}")
             raise HTTPException(status_code=404, detail=f"Scoreboard not found in cache for match={match_code}")
         # Assuming the scoreboard is stored as a JSON string
-        scoreboard_list = json.loads(cached_data)
-        
-        if not isinstance(scoreboard_list, list):
-            global_logger.error(f"Cached data for match={match_code} is not a list. Key: {cache_key}")
-            raise HTTPException(status_code=500, detail=f"Invalid scoreboard format in cache for match={match_code}")
+        scoreboard_list = []
+        for player_code_bytes, score_bytes in scoreboard_hash.items():
+            try:
+                # Decode bytes to string and convert score to integer
+                player_code = player_code_bytes.decode() if isinstance(player_code_bytes, bytes) else player_code_bytes
+                total_d_score = int(score_bytes.decode() if isinstance(score_bytes, bytes) else score_bytes)
+                
+                scoreboard_list.append({
+                    "player_code": player_code,
+                    "total_d_score": total_d_score,
+                })
+            except ValueError:
+                global_logger.error(f"Invalid score value in cache for player {player_code} in match {match_code}.")
+                continue
         global_logger.info(f"✅ Successfully retrieved and parsed scoreboard from cache for match={match_code}")
         return GetScoreboardResponse(
             response={

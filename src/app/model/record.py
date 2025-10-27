@@ -21,7 +21,6 @@ class Record(Base):
     __tablename__ = "records"
     # Constraints
     __table_args__ = (
-        CheckConstraint('d_score_earned >= 0', name='check_d_score_earned_non_negative'),
         CheckConstraint('d_score_earned % 5 = 0', name='check_d_score_earned_multiple_of_5'),
     )
     # Columns
