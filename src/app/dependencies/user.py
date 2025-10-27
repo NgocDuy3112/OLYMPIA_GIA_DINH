@@ -3,15 +3,16 @@ from fastapi.security import OAuth2PasswordBearer
 import jwt
 from jwt import PyJWTError
 
-from app.schema.user import RoleEnum
 from app.config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
+
 # Mapping roles to allowed HTTP verbs
 ROLE_PERMISSIONS = {
     "guest": {"GET"},
-    "client": {"GET", "POST", "PUT"},
+    "player": {"GET"},
+    "moderator": {"GET", "POST", "PUT"},
     "admin": {"GET", "POST", "PUT", "DELETE"},
 }
 
@@ -39,3 +40,19 @@ def authorize_user(request: Request, user: dict = Depends(get_current_user)):
             detail=f"Role '{user_role}' is not allowed to perform {method}"
         )
     return user
+
+
+def get_ws_user(token: str) -> dict:
+    payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+
+    # Ensure player_code exists for WS usage
+    player_code = payload.get("player_code")
+    if not player_code:
+        raise HTTPException(status_code=401, detail="Token missing player_code")
+
+    # Optionally include role if you want WS authorization later
+    return {
+        "username": payload.get("sub"),
+        "player_code": player_code,
+        "role": payload.get("role", "guest"),  # default guest
+    }

@@ -12,7 +12,8 @@ from app.api import (
     record,
     question,
     auth,
-    scoreboard
+    scoreboard,
+    controller
 )
 from app.logger import global_logger
 
@@ -47,6 +48,7 @@ app.include_router(match.match_router)
 app.include_router(answer.answer_router)
 app.include_router(record.record_router)
 app.include_router(scoreboard.scoreboard_router)
+app.include_router(controller.controller_router)
 
 
 

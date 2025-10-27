@@ -2,6 +2,7 @@
 from collections.abc import AsyncGenerator
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
+from functools import lru_cache
 
 from valkey.asyncio import Valkey
 from app.config import settings
@@ -28,4 +29,9 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def get_valkey_cache() -> Valkey:
-    return Valkey.from_url(settings.VALKEY_ANSWERS_CACHE_URL)
+    return Valkey.from_url(settings.VALKEY_CACHE_URL, decode_responses=True)
+
+
+
+async def get_valkey_pubsub() -> Valkey:
+    return Valkey.from_url(settings.VALKEY_PUBSUB_URL, decode_responses=True)

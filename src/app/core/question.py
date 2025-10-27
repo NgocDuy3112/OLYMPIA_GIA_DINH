@@ -13,7 +13,7 @@ from app.model.match import Match
 from app.model.question import Question
 from app.schema.question import *
 from app.logger import global_logger
-from app.utils.get_id_by_code import _get_id_by_code
+from app.utils.helpers import _get_id_by_code
 
 
 SHEET_NAMES = ['LAM_NONG', 'VUOT_DEO', 'BUT_PHA', 'NUOC_RUT']

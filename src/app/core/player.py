@@ -9,7 +9,7 @@ from app.model.player import Player
 from app.model.team import Team
 from app.schema.player import *
 from app.logger import global_logger
-from app.utils.get_id_by_code import _get_id_by_code
+from app.utils.helpers import _get_id_by_code
 
 
 

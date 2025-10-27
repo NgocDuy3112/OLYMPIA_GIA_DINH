@@ -1,7 +1,6 @@
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
-from sqlalchemy.exc import IntegrityError, NoResultFound
+from sqlalchemy.exc import IntegrityError
 
 from fastapi import HTTPException
 
@@ -88,9 +87,7 @@ async def get_match_from_match_code_from_db(match_code: str, session: AsyncSessi
                 status_code=404,
                 detail=f'Match with match_code={match_code} not found'
             )
-            
         global_logger.info(f"Successfully retrieved match: {match_code}.")
-            
         return GetMatchResponse(
             response={
                 'data': {
@@ -124,13 +121,10 @@ async def delete_match_from_match_code_from_db(match_code: str, session: AsyncSe
             .where(Match.match_code == match_code)
             .values(is_deleted=True)
         )
-        
         execution = await session.execute(update_statement)
         rows_affected = execution.rowcount
-        
         # 2. Commit the change
         await session.commit()
-        
         # 3. Check for existence (404) based on rows affected
         if rows_affected == 0:
             global_logger.warning(f"Match not found: match_code={match_code}. Returning 404.")

@@ -1,6 +1,6 @@
 configs
 notebooks
-data
+database
 test
 sounds
 sql
@@ -8,7 +8,7 @@ docker-compose-testing.yaml
 
 .DS_Store
 .python-version
-pyproject.yaml
+pyproject.toml
 uv.lock
 
 # Byte-compiled / optimized / DLL files
