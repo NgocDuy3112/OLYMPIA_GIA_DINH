@@ -22,3 +22,18 @@ async def trigger_start_question_api(
     pubsub: Valkey=Depends(get_valkey_pubsub)
 ):
     return await trigger_start_question(request_data, pubsub)
+
+
+
+
+@controller_router.websocket("/ws/match/{match_code}")
+async def match_websocket_endpoint(
+    websocket: WebSocket,
+    match_code: str,
+    valkey: Valkey = Depends(get_valkey_pubsub),
+):
+    """
+    WebSocket endpoint for a match.
+    Clients subscribe to real-time updates for a match.
+    """
+    await handle_match_websocket(websocket, match_code, valkey)

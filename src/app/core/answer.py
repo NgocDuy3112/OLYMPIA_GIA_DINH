@@ -17,7 +17,7 @@ from app.model.answer import Answer
 from app.model.question import Question
 from app.schema.answer import *
 from app.logger import global_logger
-from app.utils.get_id_by_code import _get_id_by_code
+from app.utils.helpers import _get_id_by_code
 
 
 

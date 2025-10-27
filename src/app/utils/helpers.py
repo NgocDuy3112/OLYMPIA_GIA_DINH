@@ -2,11 +2,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import NoResultFound
 
+from uuid import UUID
+
 from fastapi import HTTPException
 
 
 
-async def _get_id_by_code(session: AsyncSession, model, code_field: str, code: str, entity_name: str) -> int:
+async def _get_id_by_code(session: AsyncSession, model, code_field: str, code: str, entity_name: str) -> UUID:
     query = select(model.id).where(getattr(model, code_field) == code)
     try:
         execution = await session.execute(query)

@@ -16,11 +16,8 @@ from app.model.record import Record
 from app.model.question import Question
 from app.schema.record import *
 from app.logger import global_logger
-from app.utils.get_id_by_code import _get_id_by_code
-from app.utils.ws_event import publish_ws_event
-
-
-MEDIA_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+from app.utils.helpers import _get_id_by_code
+from app.utils.match_event import publish_ws_event
 
 
 MEDIA_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -50,7 +47,7 @@ async def post_record_to_db(request: PostRecordRequest, cache: Valkey, session: 
         await session.commit()
         await session.refresh(new_record)
         global_logger.info(f"Record created successfully. record_id={new_record.id}")
-    
+
         # 4. Update cummulative D score in cache
         valkey_key = f"scoreboard:{request.match_code}"
         try:
@@ -289,22 +286,20 @@ async def get_all_records_from_match_code_from_db_exported_to_excel_file(match_c
                     'Mã thí sinh': record.player.player_code if record.player else 'N/A',
                     'Điểm D nhận được': record.d_score_earned,
                 })
-            
-            # --- CRITICAL FIX START: Convert data to DataFrame and write to Excel ---
+
             if data:
                 df = pd.DataFrame(data)
                 df.to_excel(writer, index=False, sheet_name=match_found.match_code)
-            # --- CRITICAL FIX END ---
 
-        # --- CRITICAL FIX START: Seek buffer and return StreamingResponse ---
+
         buffer.seek(0)
         return StreamingResponse( 
             content=buffer,
             media_type=MEDIA_TYPE,
             headers={'Content-Disposition': f'attachment; filename="{response_name}"'}
         )
-        # --- CRITICAL FIX END ---
-        
+
+
     except HTTPException:
         raise
     except Exception:
@@ -318,11 +313,7 @@ async def get_all_records_from_match_code_from_db_exported_to_excel_file(match_c
 
 async def delete_all_records_from_match_code_in_db(match_code: str, session: AsyncSession) -> DeleteRecordsResponse:
     global_logger.info(f"DELETE request received for player with match_code={match_code} (soft-delete).")
-    # 1. Get the match_id subquery
     match_id_subquery = select(Match.id).where(Match.match_code == match_code).scalar_subquery()
-    
-    # 2. Check if any questions exist for the match (optional but good for 404 response)
-    # Using a select(literal(1)) for existence check is often more efficient
     existence_query = select(Question.id).where(Question.match_id == match_id_subquery).limit(1)
     exists_result = await session.execute(existence_query)
     if not exists_result.scalar_one_or_none():
@@ -331,22 +322,15 @@ async def delete_all_records_from_match_code_in_db(match_code: str, session: Asy
             status_code=404,
             detail=f'No records found for match with match_code={match_code} in the database'
         )
-
-    # 3. Perform the bulk soft-delete update
     try:
         update_query = (
             update(Record)
             .where(Record.match_id == match_id_subquery)
             .values(is_deleted=True)
-            # Instructs SQLAlchemy to return the count of rows updated
             .returning(Record.id)
         )
-        
-        # execution_result contains the updated rows' primary keys (if supported/necessary)
         execution_result = await session.execute(update_query)
-        deleted_count = execution_result.rowcount # Get the count of affected rows
-
-        # CRITICAL: Commit the transaction to save the changes
+        deleted_count = execution_result.rowcount
         await session.commit() 
         global_logger.info(f"Successfully soft-deleted {deleted_count} records for match_code={match_code}.")
         return DeleteRecordsResponse(
@@ -355,10 +339,8 @@ async def delete_all_records_from_match_code_in_db(match_code: str, session: Asy
             }
         )
     except HTTPException:
-        # Re-raise explicit HTTPExceptions (like the 404 if placed inside the try block)
         raise
     except Exception:
-        # Rollback in case of any other error
         await session.rollback()
         global_logger.exception(f'Unexpected error occurred during soft-deletion of records for match_code={match_code}.')
         raise HTTPException(

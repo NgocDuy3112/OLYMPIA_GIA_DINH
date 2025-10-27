@@ -30,7 +30,6 @@ class Record(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
     d_score_earned: Mapped[int] = mapped_column(Integer)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
-    round_code: Mapped[str] = mapped_column(String)
 
     # Foreign Keys
     player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id"), nullable=False)

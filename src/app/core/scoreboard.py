@@ -1,7 +1,5 @@
-from sqlalchemy import func
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
 
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
@@ -15,12 +13,41 @@ from app.model.match import Match
 from app.model.record import Record
 from app.model.question import Question
 from app.schema.record import *
+from app.schema.scoreboard import GetScoreboardResponse
 from app.logger import global_logger
-from app.utils.get_id_by_code import _get_id_by_code
 
 
 SHEET_NAMES = ['LAM_NONG', 'VUOT_DEO', 'BUT_PHA', 'NUOC_RUT']
 MEDIA_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+
+
+async def get_recent_cumulative_timeline_scoreboard_from_cache(match_code: str, cache: Valkey) -> GetScoreboardResponse:
+    cache_key = f"scoreboard:{match_code}"
+    global_logger.info(f"Attempting to retrieve scoreboard for match={match_code} from Valkey key: {cache_key}")
+    try:
+        cached_data = await cache.get(cache_key)
+        if cached_data is None:
+            global_logger.info(f"Scoreboard not found in cache for match={match_code}")
+            raise HTTPException(status_code=404, detail=f"Scoreboard not found in cache for match={match_code}")
+        # Assuming the scoreboard is stored as a JSON string
+        scoreboard_list = json.loads(cached_data)
+        
+        if not isinstance(scoreboard_list, list):
+            global_logger.error(f"Cached data for match={match_code} is not a list. Key: {cache_key}")
+            raise HTTPException(status_code=500, detail=f"Invalid scoreboard format in cache for match={match_code}")
+        global_logger.info(f"✅ Successfully retrieved and parsed scoreboard from cache for match={match_code}")
+        return GetScoreboardResponse(
+            response={
+                'data': scoreboard_list
+            }
+        )
+    except json.JSONDecodeError:
+        global_logger.error(f"Failed to decode JSON from cache for match={match_code}. Key: {cache_key}")
+        raise HTTPException(status_code=500, detail=f"Failed to decode JSON from cache for match={match_code}. Key: {cache_key}")
+    except Exception as e:
+        global_logger.exception(f"Error accessing Valkey for match={match_code}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error accessing Valkey for match={match_code}: {e}")
 
 
 
