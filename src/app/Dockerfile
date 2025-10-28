@@ -1,31 +1,13 @@
-FROM python:3.11-alpine
+FROM python:3.12-alpine
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-RUN apk add --no-cache \
-    build-base \
-    rust \
-    cargo \
-    python3-dev \
-    curl \
-    # Clean up the APK cache to reduce this stage's layer size
-    && rm -rf /var/cache/apk/*
+ADD . /app
 
-WORKDIR /src/app
+WORKDIR /app
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+RUN uv add -r requirements.txt
 
-# Install dependencies and curl for healthcheck
-RUN apk add --no-cache curl && \
-    pip install --no-cache-dir -r requirements.txt
+EXPOSE 8000
 
-# Copy the rest of the application
-COPY . .
-
-RUN chmod +x /src/app/entrypoint.sh
-
-ENTRYPOINT ["/src/app/entrypoint.sh"]
+CMD ["/app/.venv/bin/fastapi", "run", "main.py", "--port", "8000", "--host", "0.0.0.0"]
