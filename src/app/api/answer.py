@@ -43,6 +43,7 @@ async def get_all_answers_from_match_code(match_code: str, session: AsyncSession
 
 @answer_router.get(
     "/recent/{match_code}",
+    dependencies=[Depends(authorize_user)],
     response_model=GetAnswerResponse,
     responses={
         200: {'model': GetAnswerResponse, 'description': 'Successfully get all the recent answers from the match_code'},
