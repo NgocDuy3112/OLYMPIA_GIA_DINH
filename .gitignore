@@ -1,9 +1,8 @@
 configs
 database
+storage
 test
-sounds
 sql
-docker-compose-testing.yaml
 
 .DS_Store
 .python-version
