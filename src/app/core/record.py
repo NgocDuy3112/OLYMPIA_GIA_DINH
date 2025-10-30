@@ -169,7 +169,7 @@ async def get_all_records_from_player_code_from_db(player_code: str, session: As
             .where(Record.player_id == player_found.id)
             .options(joinedload(Record.match))
             .options(joinedload(Record.question))
-            .order_by(Record.created_at.desc())
+            .order_by(Record.created_at)
         )
         execution = await session.execute(records_query)
         records_list = execution.scalars().all()
@@ -224,7 +224,7 @@ async def get_all_records_from_match_code_from_db(match_code: str, session: Asyn
             .where(Record.match_id == match_found.id) # Use match_found.id
             .options(joinedload(Record.player)) # Assuming relation is to 'player'
             .options(joinedload(Record.question))
-            .order_by(Record.created_at.desc())
+            .order_by(Record.created_at)
         )
         execution = await session.execute(records_query)
         records_list = execution.scalars().all() # Changed result to records_list
@@ -281,7 +281,7 @@ async def get_all_records_from_match_code_from_db_exported_to_excel_file(match_c
             .where(Record.match_id == match_found.id)
             .options(joinedload(Record.player))
             .options(joinedload(Record.question))
-            .order_by(Record.created_at.desc())
+            .order_by(Record.created_at)
         )
         execution = await session.execute(records_query)
         records_list = execution.scalars().all()
