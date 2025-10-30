@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import String, Boolean, DateTime, ForeignKey, Numeric, UUID
+from sqlalchemy import String, Boolean, DateTime, ForeignKey, Numeric, UUID, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.dependencies.db import Base
@@ -19,8 +19,8 @@ class Answer(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
-    content: Mapped[str] = mapped_column(String, nullable=True)
-    is_buzzed: Mapped[bool] = mapped_column(Boolean, nullable=True, default=False)
+    content: Mapped[str] = mapped_column(Text, nullable=True)
+    is_buzzed: Mapped[bool] = mapped_column(Boolean, nullable=True)
     timestamp: Mapped[float] = mapped_column(Numeric(5, 3), nullable=True)
     # Foreign Keys
     player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id"), nullable=False)
