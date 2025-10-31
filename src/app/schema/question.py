@@ -10,8 +10,10 @@ class PostQuestionRequest(BaseRequest):
     extra_info: dict | None = None  # media_sources, explaination, citation, note
 
 
+
 class PostQuestionResponse(BaseResponse):
     pass
+
 
 
 class PutQuestionRequest(BaseRequest):
@@ -22,13 +24,23 @@ class PutQuestionRequest(BaseRequest):
     extra_info: dict | None = None
 
 
+
 class PutQuestionResponse(BaseResponse):
     pass
+
 
 
 class DeleteQuestionResponse(BaseResponse):
     pass
 
 
+
 class GetQuestionResponse(BaseResponse):
     pass
+
+
+
+class StartQuestionRequest(BaseRequest):
+    match_code: str
+    question_code: str
+    time_limit: int

@@ -5,8 +5,8 @@ from fastapi import HTTPException
 from fastapi.websockets import WebSocket, WebSocketDisconnect
 
 from app.dependencies.ws import *
-from app.schema.controller import StartQuestionRequest
-from app.utils.match_event import trigger_start_time, process_client_event
+from app.schema.controller import *
+from app.utils.match_event import *
 from app.logger import global_logger
 
 
@@ -32,8 +32,6 @@ async def listen_to_websocket_client(websocket: WebSocket, match_code: str, valk
             client_msg = await websocket.receive_json() 
             global_logger.debug(f"[WS] From client: {client_msg}")
             event_type = client_msg.get("type")
-            
-            # Check if locked (no more buzz/answer allowed)
             if event_type in ["buzz", "answer"]:
                 locked = await valkey.get(f"match:{match_code}:locked")
                 if locked == b"1" or locked == "1":
@@ -67,19 +65,30 @@ async def handle_match_websocket(websocket: WebSocket, match_code: str, valkey: 
 
 
 
-async def trigger_start_question(
-    request: StartQuestionRequest,
-    pubsub: Valkey
-):
+async def trigger_start_timer(request: StartQuestionRequest, pubsub: Valkey) -> StartQuestionResponse:
     try:
-        # Gọi hàm logic mà bạn đã viết
         result = await trigger_start_time(
             pubsub=pubsub,
             match_code=request.match_code,
             question_code=request.question_code,
             time_limit=request.time_limit
         )
-        return result
+        return StartQuestionResponse(response={'message': result['message']})
     except Exception as e:
         global_logger.error(f"[API_START] There's an error when triggering the question {request.question_code} for match {request.match_code}: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
+
+
+
+async def trigger_pick_question(request: PickQuestionRequest, pubsub: Valkey) -> PickQuestionResponse:
+    try:
+        result = await pick_question(
+            pubsub=pubsub,
+            match_code=request.match_code,
+            player_code=request.player_code,
+            question_code=request.question_code
+        )
+        return PickQuestionResponse(response={'message': result['message']})
+    except Exception as e:
+        global_logger.error(f"[API_START] There's an error when picking the question {request.question_code} by player {request.player_code} for match {request.match_code}: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {e}")

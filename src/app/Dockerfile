@@ -6,10 +6,12 @@ ADD . /app
 
 WORKDIR /app
 
-RUN uv add -r requirements.txt
-
 ENV PATH="/app/.venv/bin:$PATH"
+
+RUN uv init .
+
+RUN uv add -r requirements.txt
 
 EXPOSE 8000
 
-CMD ["fastapi", "run", "main.py", "--port", "8000", "--host", "0.0.0.0"]
+CMD ["gunicorn", "main:app", "--workers", "3", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
