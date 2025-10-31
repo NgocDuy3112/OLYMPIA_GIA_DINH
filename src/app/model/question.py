@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import String, DateTime, UUID, ForeignKey, Boolean
+from sqlalchemy import String, DateTime, UUID, ForeignKey, Boolean, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,9 +17,9 @@ class Question(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
-    question_code: Mapped[str] = mapped_column(String)
-    content: Mapped[str] = mapped_column(String)
-    correct_answers: Mapped[str] = mapped_column(String)
+    question_code: Mapped[str] = mapped_column(String(length=20))
+    content: Mapped[str] = mapped_column(Text)
+    correct_answers: Mapped[str] = mapped_column(Text)
     extra_info: Mapped[dict] = mapped_column(JSONB, nullable=True)  # JSONB column
     is_used: Mapped[bool] = mapped_column(Boolean, default=False)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)

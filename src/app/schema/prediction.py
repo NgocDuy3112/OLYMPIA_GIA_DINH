@@ -2,5 +2,5 @@ from app.schema.base import BaseResponse
 
 
 
-class GetStatsResponse(BaseResponse):
+class GetPredictionResponse(BaseResponse):
     pass

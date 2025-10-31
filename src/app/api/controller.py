@@ -10,19 +10,30 @@ controller_router = APIRouter(prefix='/controller', tags=['Điều khiển'])
 
 
 @controller_router.post(
-    "/start_question",
+    "/start_timer",
     dependencies=[Depends(authorize_user)],
+    response_model=StartQuestionResponse,
     responses={
         200: {'description': 'Successfully get the match'},
         500: {'description': 'Internal Server Error'}
     }
 )
-async def trigger_start_question_api(
-    request_data: StartQuestionRequest,
-    pubsub: Valkey=Depends(get_valkey_pubsub)
-):
-    return await trigger_start_question(request_data, pubsub)
+async def trigger_start_timer_api(request: StartQuestionRequest, pubsub: Valkey=Depends(get_valkey_pubsub)):
+    return await trigger_start_timer(request, pubsub)
 
+
+
+@controller_router.post(
+    "/pick_question",
+    dependencies=[Depends(authorize_user)],
+    response_model=PickQuestionResponse,
+    responses={
+        200: {'description': 'Successfully get the match'},
+        500: {'description': 'Internal Server Error'}
+    }
+)
+async def trigger_pick_question_api(request: PickQuestionRequest, pubsub: Valkey=Depends(get_valkey_pubsub)):
+    return await trigger_pick_question(request, pubsub)
 
 
 
@@ -32,8 +43,4 @@ async def match_websocket_endpoint(
     match_code: str,
     valkey: Valkey = Depends(get_valkey_pubsub),
 ):
-    """
-    WebSocket endpoint for a match.
-    Clients subscribe to real-time updates for a match.
-    """
     await handle_match_websocket(websocket, match_code, valkey)

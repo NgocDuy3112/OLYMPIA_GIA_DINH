@@ -7,7 +7,6 @@ from valkey.asyncio import Valkey
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 import io
-import json
 import pandas as pd
 
 from app.model.player import Player
@@ -38,7 +37,19 @@ async def post_record_to_db(request: PostRecordRequest, cache: Valkey, session: 
         # 1. Validate Player and Match existence
         player_id = await _get_id_by_code(session, Player, 'player_code', request.player_code, 'Player')
         match_id = await _get_id_by_code(session, Match, 'match_code', request.match_code, 'Match')
-        question_id = await _get_id_by_code(session, Question, 'question_code', request.question_code, 'Question')
+        stmt = select(Question).where(
+            Question.match_id == match_id,
+            Question.question_code == request.question_code
+        )
+        result = await session.execute(stmt)
+        existing_question = result.scalars().first()
+        if existing_question:
+            question_id = existing_question.id
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail=f'An unexpected error occurred during question finding.'
+            )
         global_logger.debug(f"Player ID: {player_id}, Match ID: {match_id}, Question ID: {question_id}")
 
         # 2. Create the new Record object
@@ -166,7 +177,7 @@ async def get_all_records_from_player_code_from_db(player_code: str, session: As
             .where(Record.player_id == player_found.id)
             .options(joinedload(Record.match))
             .options(joinedload(Record.question))
-            .order_by(Record.created_at.desc())
+            .order_by(Record.created_at)
         )
         execution = await session.execute(records_query)
         records_list = execution.scalars().all()
@@ -221,7 +232,7 @@ async def get_all_records_from_match_code_from_db(match_code: str, session: Asyn
             .where(Record.match_id == match_found.id) # Use match_found.id
             .options(joinedload(Record.player)) # Assuming relation is to 'player'
             .options(joinedload(Record.question))
-            .order_by(Record.created_at.desc())
+            .order_by(Record.created_at)
         )
         execution = await session.execute(records_query)
         records_list = execution.scalars().all() # Changed result to records_list
@@ -278,7 +289,7 @@ async def get_all_records_from_match_code_from_db_exported_to_excel_file(match_c
             .where(Record.match_id == match_found.id)
             .options(joinedload(Record.player))
             .options(joinedload(Record.question))
-            .order_by(Record.created_at.desc())
+            .order_by(Record.created_at)
         )
         execution = await session.execute(records_query)
         records_list = execution.scalars().all()
