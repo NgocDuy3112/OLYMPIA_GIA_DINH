@@ -1,11 +1,12 @@
 import './App.css'
+import {ContestantPage} from './pages/ContestantPage'
 
 function App() {
   return (
-    <h1>
-      This is Olympia Gia Định
-    </h1>
+    <>
+      <ContestantPage />
+    </>
   )
 }
 
-export default App
+export default App;
