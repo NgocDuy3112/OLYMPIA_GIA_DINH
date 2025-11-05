@@ -9,10 +9,10 @@ import type { Player } from "@/types/player";
 
 const ButPhaPage = () => {
     const [players, setPlayers] = useState<Player[]>([
-        { id: 'C1', name: 'Hữu Khang', score: 60, isCurrent: true, lastAnswer: 'ĐÂY LÀ ĐÁP ÁN CỦA TUI', timestamp: 8.907 },
-        { id: 'C2', name: 'Kiến Trúc', score: 45, isCurrent: false, lastAnswer: '1 2 3 4', timestamp: 9.005 },
-        { id: 'C3', name: 'Phượng Hoàng', score: 100, isCurrent: false, lastAnswer: '' },
-        { id: 'C4', name: 'Đình Oánh', score: 55, isCurrent: false, lastAnswer: '' },
+        { code: 'C1', name: 'Hữu Khang', score: 60, isCurrent: true, lastAnswer: 'ĐÂY LÀ ĐÁP ÁN CỦA TUI', timestamp: 8.907 },
+        { code: 'C2', name: 'Kiến Trúc', score: 45, isCurrent: false, lastAnswer: '1 2 3 4', timestamp: 9.005 },
+        { code: 'C3', name: 'Phượng Hoàng', score: 100, isCurrent: false, lastAnswer: '' },
+        { code: 'C4', name: 'Đình Oánh', score: 55, isCurrent: false, lastAnswer: '' },
     ]);
     const [timer, setTimer] = useState(10);
     const [answerInput, setAnswerInput] = useState('');
@@ -21,7 +21,7 @@ const ButPhaPage = () => {
             {/* Scoreboard */}
             <div className="flex gap-4 max-w-7xl w-full justify-center mt-5">
                 {players.map(c => (
-                    <PlayerBoard key={c.id} player={c} />
+                    <PlayerBoard key={c.code} player={c} />
                 ))}
             </div>
             {/* QuestionArea */}

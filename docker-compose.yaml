@@ -19,7 +19,7 @@ services:
     restart: always
     profiles:
       - production
-      - developer
+      - development
 
   valkey:
     container_name: valkey
@@ -35,7 +35,7 @@ services:
       - ogd3-network
     profiles:
       - production
-      - developer
+      - development
 
   app:
     container_name: app
@@ -61,26 +61,45 @@ services:
     restart: unless-stopped
     profiles:
       - production
-      - developer
+      - development
 
-  bot:
-    container_name: bot
+  # bot:
+  #   container_name: bot
+  #   build:
+  #     context: ./src/bot
+  #   working_dir: /src/bot
+  #   command: sh -c "python main.py"
+  #   volumes:
+  #     - ./src/bot:/src/bot
+  #     - ./sounds:/src/sounds
+  #     - ./configs/.env.bot:/src/configs/.env
+  #   environment:
+  #     - ENV_FILE=/src/configs/.env
+  #     - PYTHONPATH=/src
+  #   networks:
+  #     - ogd3-network
+  #   restart: always
+  #   profiles:
+  #     - production
+  #     - development
+
+  ui:
+    container_name: ui
     build:
-      context: ./src/bot
-    working_dir: /src/bot
-    command: sh -c "python main.py"
-    volumes:
-      - ./src/bot:/src/bot
-      - ./sounds:/src/sounds
-      - ./configs/.env.bot:/src/configs/.env
+      context: ./ui
+    working_dir: /ui
     environment:
-      - ENV_FILE=/src/configs/.env
-      - PYTHONPATH=/src
+      NODE_ENV: development
+    ports:
+      - "5173:5173"
+    depends_on:
+      app: 
+        condition: service_started
     networks:
       - ogd3-network
-    restart: always
     profiles:
       - production
+      - development
 
 
 networks:

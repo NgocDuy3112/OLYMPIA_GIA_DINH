@@ -27,7 +27,7 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({player}) => {
 
     return (
         <div
-            key={player.id}
+            key={player.code}
             className={`flex flex-col items-center p-2 rounded-lg transition duration-300 w-1/4 ml-1 mr-1 min-h-[100px] shadow-sm
                 ${player.isCurrent 
                     ? 'bg-red-600 shadow-xl scale-100 ring-4 text-white ring-red-300' 

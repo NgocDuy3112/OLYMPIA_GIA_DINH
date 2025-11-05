@@ -8,10 +8,10 @@ import type { Player } from "@/types/player";
 
 const NuocRutCaNhanPage = () => {
     const [players, setPlayers] = useState<Player[]>([
-        { id: 'C1', name: 'Hữu Khang', score: 60, isCurrent: true },
-        { id: 'C2', name: 'Kiến Trúc', score: 45, isCurrent: false },
-        { id: 'C3', name: 'Phượng Hoàng', score: 100, isCurrent: false },
-        { id: 'C4', name: 'Đình Oánh', score: 55, isCurrent: false},
+        { code: 'C1', name: 'Hữu Khang', score: 60, isCurrent: true },
+        { code: 'C2', name: 'Kiến Trúc', score: 45, isCurrent: false },
+        { code: 'C3', name: 'Phượng Hoàng', score: 100, isCurrent: false },
+        { code: 'C4', name: 'Đình Oánh', score: 55, isCurrent: false},
     ]);
     const [timer, setTimer] = useState(10);
     return (
@@ -19,7 +19,7 @@ const NuocRutCaNhanPage = () => {
             {/* Scoreboard */}
             <div className="flex gap-4 max-w-7xl w-full justify-center mt-5">
                 {players.map(c => (
-                    <PlayerBoard key={c.id} player={c} />
+                    <PlayerBoard key={c.code} player={c} />
                 ))}
             </div>
             {/* QuestionArea */}

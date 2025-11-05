@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PlayerBoard from "@/components/contestant/PlayerBoard";
 import QuestionArea from "@/components/contestant/QuestionArea";
 import PingButton from "@/components/contestant/PingButton";
@@ -8,18 +8,27 @@ import type { Player } from "@/types/player";
 
 const LamNongCaNhanPage = () => {
     const [players, setPlayers] = useState<Player[]>([
-        { id: 'C1', name: 'Hữu Khang', score: 60, isCurrent: true },
-        { id: 'C2', name: 'Kiến Trúc', score: 45, isCurrent: false},
-        { id: 'C3', name: 'Phượng Hoàng', score: 100, isCurrent: false},
-        { id: 'C4', name: 'Đình Oánh', score: 55, isCurrent: false },
+        { code: 'C1', name: 'Hữu Khang', score: 60, isCurrent: true },
+        { code: 'C2', name: 'Kiến Trúc', score: 45, isCurrent: false},
+        { code: 'C3', name: 'Phượng Hoàng', score: 100, isCurrent: false},
+        { code: 'C4', name: 'Đình Oánh', score: 55, isCurrent: false },
     ]);
     const [timer, setTimer] = useState(10);
+    useEffect(() => {
+        if (timer > 0) {
+            const intervalId = setInterval(() => {
+                setTimer(prevTimer => prevTimer - 1);
+            }, 1000);
+
+            return () => clearInterval(intervalId);
+        }
+    }, [timer]);
     return (
         <div className="flex flex-col justify-start items-center min-h-screen">
             {/* Scoreboard */}
             <div className="flex gap-4 max-w-7xl w-full justify-center mt-5">
                 {players.map(c => (
-                    <PlayerBoard key={c.id} player={c} />
+                    <PlayerBoard key={c.code} player={c} />
                 ))}
             </div>
             {/* QuestionArea */}
@@ -30,7 +39,7 @@ const LamNongCaNhanPage = () => {
             </div>
             <div className="p-3 w-full flex justify-center">
                 <div className="w-full max-w-7xl">
-                    <PingButton isEnabled={true} onSubmit={() => setAnswerInput('')} />
+                    <PingButton isEnabled={true} onSubmit={() => console.log('Pinged!')} />
                 </div>
             </div>
         </div>

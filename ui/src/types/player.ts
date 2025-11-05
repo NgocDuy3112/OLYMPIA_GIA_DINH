@@ -1,5 +1,5 @@
 export interface Player {
-    id: string;
+    code: string;
     name: string;
     score: number;
     isCurrent: boolean;
