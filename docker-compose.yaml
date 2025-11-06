@@ -42,7 +42,6 @@ services:
     build:
       context: ./src/app
     working_dir: /src/app
-    entrypoint: /src/app/entrypoint.sh
     volumes:
       - ./src/app:/src/app
       - ./configs/.env.app:/src/configs/.env
@@ -99,7 +98,6 @@ services:
       - ogd3-network
     profiles:
       - production
-      - development
 
 
 networks:

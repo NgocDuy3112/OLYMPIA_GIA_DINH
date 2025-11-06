@@ -13,7 +13,7 @@ interface WebSocketPayload {
 
 
 const createWsUrl = (matchCode: string) => 
-    `ws://localhost:8000/ws/match/${matchCode}`; 
+    `ws://localhost:8000/controller/ws/match/${matchCode}`; 
 
 
 export const useWebSocket = (matchCode: string) => { 

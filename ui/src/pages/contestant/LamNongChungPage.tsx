@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import PlayerBoard from "@/components/contestant/PlayerBoard";
 import QuestionArea from "@/components/contestant/QuestionArea";
 import InputAnswerArea from "@/components/contestant/InputAnswerArea";
@@ -8,9 +8,9 @@ import type { Player } from "@/types/player";
 import { useWebSocket } from "@/hooks/useWebSocket";
 
 
-const MATCH_CODE = "MATCH_2025_ABC"; 
-const CURRENT_PLAYER_CODE = "C1"; 
-const QUESTION_CODE = "LN_CHUNG_Q1"; 
+const MATCH_CODE = "M01T"; 
+const CURRENT_PLAYER_CODE = "P01T"; 
+const QUESTION_CODE = "LN_C_01"; 
 const MAX_TIME = 10;
 
 
@@ -23,45 +23,47 @@ const isMessageObject = (message: any): message is { type: string, player_code?:
 
 const LamNongChungPage = () => {
     const [players, setPlayers] = useState<Player[]>([
-        { code: 'C1', name: 'Hữu Khang', score: 60, isCurrent: true, lastAnswer: 'ĐÂY LÀ ĐÁP ÁN CỦA TUI', timestamp: 8.907 },
-        { code: 'C2', name: 'Kiến Trúc', score: 45, isCurrent: false, lastAnswer: '1 2 3 4', timestamp: 9.005 },
-        { code: 'C3', name: 'Phượng Hoàng', score: 100, isCurrent: false, lastAnswer: '' },
-        { code: 'C4', name: 'Đình Oánh', score: 55, isCurrent: false, lastAnswer: '' },
+        { code: 'P01T', name: 'Hữu Khang', score: 60, isCurrent: true, lastAnswer: '', timestamp: 8.907 },
+        { code: 'P02T', name: 'Kiến Trúc', score: 45, isCurrent: false, lastAnswer: '', timestamp: 9.005 },
+        { code: 'P03T', name: 'Phượng Hoàng', score: 100, isCurrent: false, lastAnswer: '' },
+        { code: 'P04T', name: 'Đình Oánh', score: 55, isCurrent: false, lastAnswer: '' },
     ]);
     const [timer, setTimer] = useState(MAX_TIME);
     const [answerInput, setAnswerInput] = useState('');
     const [submitTime, setSubmitTime] = useState<number | undefined>(undefined);
     const [hasAnswered, setHasAnswered] = useState(false); 
-
     const { isConnected, lastMessage, sendAnswer } = useWebSocket(MATCH_CODE);
 
-    // --- LOGIC CẬP NHẬT ĐÁP ÁN NGAY LẬP TỨC VÀ GỬI WS ---
+    const timerStartTimeRef = useRef<number | null>(null);
+
     const handleSubmitAnswer = useCallback(() => {
         const trimmedAnswer = answerInput.trim();
 
-        if (!trimmedAnswer || !isConnected || timer <= 0 || hasAnswered) {
+        if (!trimmedAnswer || !isConnected || timer <= 0) {
             console.warn("Không thể gửi đáp án.");
             return;
         }
-        
-        // if (!trimmedAnswer  || timer <= 0 || hasAnswered) {
-        //     console.warn("Không thể gửi đáp án.");
-        //     return;
-        // }
-        
+        const submitTimestampMs = Date.now();
         const currentTime = timer;
         const success = sendAnswer(CURRENT_PLAYER_CODE, QUESTION_CODE, trimmedAnswer);
 
         if (success) {
-            console.log(`Đáp án "${trimmedAnswer}" đã được gửi thành công. Thời gian: ${MAX_TIME - currentTime}s`);
-            setSubmitTime(currentTime);
+            let finalTimestamp: number;
+            if (timerStartTimeRef.current !== null) {
+                const timeElapsedSinceStart = (submitTimestampMs - timerStartTimeRef.current) / 1000;
+                finalTimestamp = timeElapsedSinceStart; 
+            } else {
+                finalTimestamp = MAX_TIME - timer; 
+            }
+            finalTimestamp = Math.max(0, Math.min(MAX_TIME, finalTimestamp));
+            setSubmitTime(finalTimestamp);
             setHasAnswered(true);
             setPlayers(prevPlayers => prevPlayers.map(p => 
                 p.code === CURRENT_PLAYER_CODE 
                     ? { 
                         ...p, 
                         lastAnswer: trimmedAnswer, 
-                        timestamp: MAX_TIME - currentTime 
+                        timestamp: parseFloat(finalTimestamp.toFixed(3))
                     }
                     : p
             ));
@@ -71,6 +73,7 @@ const LamNongChungPage = () => {
 
     // --- LOGIC TIMER ---
     useEffect(() => {
+        timerStartTimeRef.current = Date.now() - (MAX_TIME - timer) * 1000;
         if (timer > 0) {
             const intervalId = setInterval(() => {
                 setTimer(prevTimer => prevTimer - 1);
@@ -78,13 +81,15 @@ const LamNongChungPage = () => {
 
             return () => clearInterval(intervalId);
         }
+        if (timer === 0) {
+            setAnswerInput('');
+        }
     }, [timer]);
 
 
     useEffect(() => {
         if (lastMessage && isMessageObject(lastMessage)) {
             const msg = lastMessage;
-
             if (msg.type === 'update_score' && msg.player_code && msg.new_score !== undefined) {
                 const newScore = msg.new_score as number;
                 
@@ -101,17 +106,16 @@ const LamNongChungPage = () => {
                 }
             } 
             
-            // VÍ DỤ: Xử lý khi có câu hỏi mới
             if (msg.type === 'new_question') {
                 setTimer(MAX_TIME);
                 setHasAnswered(false);
-                setAnswerInput('');
+                timerStartTimeRef.current = Date.now();
             }
         }
     }, [lastMessage, setPlayers, answerInput]);
 
     const timerDisplay = timer.toString().padStart(2, '0');
-    const isSubmissionDisabled = !isConnected || timer <= 0 || hasAnswered;
+    const isSubmissionDisabled = !isConnected || timer <= 0;
 
 
     return (
@@ -119,7 +123,6 @@ const LamNongChungPage = () => {
             {/* Scoreboard */}
             <div className="flex gap-4 max-w-7xl w-full justify-center mt-5">
                 {players.map(c => (
-                    // Lưu ý: Đã đổi key từ c.id sang c.code
                     <PlayerBoard key={c.code} player={c} /> 
                 ))}
             </div>
@@ -127,7 +130,7 @@ const LamNongChungPage = () => {
             {/* QuestionArea */}
             <div className="p-5 w-full flex justify-center">
                 <div className="w-full max-w-7xl">
-                    <QuestionArea title="LÀM NÓNG - LƯỢT CHUNG" questionContent="Đoạn trailer chính thức của giải đấu Liên Quân quốc tế AIC 2024 có xuất hiện hình ảnh của một chiếc xe lửa được sử dụng cho một tuyến đường sắt là một phần của hệ thống tuyến đường sắt xuyên lục địa Á - Âu. Tuyến đường sắt này có tên là gì, và tuyến đường sắt này không đi qua (các) thành phố nào trong các thành phố sau: Hà Nội (1), Hà Nam (2), Nam Định (3), Ninh Bình (4), Thanh Hoá (5), Nghệ An (6), Hà Tĩnh (7), Quảng Bình (8), Quảng Trị (9), Thừa Thiên Huế (10), Đà Nẵng (11), Quảng Nam (12), Quảng Ngãi (13), Bình Định (14), Phú Yên (15), Khánh Hoà (16), Ninh Thuận (17), Bình Thuận (18), Lâm Đồng (19), Đồng Nai (20), Bình Dương (21), Thành phố Hồ Chí Minh (22), Cần Thơ (23), Đồng Tháp (24)?" mediaUrl="../image/background.jpg" timerDisplay={timerDisplay}/>
+                    <QuestionArea title="LÀM NÓNG - LƯỢT CHUNG" questionContent="Đoạn trailer chính thức của giải đấu Liên Quân quốc tế AIC 2024 có xuất hiện hình ảnh của một chiếc xe lửa được sử dụng cho một tuyến đường sắt là một phần của hệ thống tuyến đường sắt xuyên lục địa Á - Âu. Tuyến đường sắt này có tên là gì, và tuyến đường sắt này không đi qua (các) thành phố nào trong các thành phố sau: Hà Nội (1), Hà Nam (2), Nam Định (3), Ninh Bình (4), Thanh Hoá (5), Nghệ An (6), Hà Tĩnh (7), Quảng Bình (8), Quảng Trị (9), Thừa Thiên Huế (10), Đà Nẵng (11), Quảng Nam (12), Quảng Ngãi (13), Bình Định (14), Phú Yên (15), Khánh Hoà (16), Ninh Thuận (17), Bình Thuận (18), Lâm Đồng (19), Đồng Nai (20), Bình Dương (21), Thành phố Hồ Chí Minh (22), Cần Thơ (23), Đồng Tháp (24)?" timerDisplay={timerDisplay}/>
                 </div>
             </div>
             {/* InputAnswerArea */}

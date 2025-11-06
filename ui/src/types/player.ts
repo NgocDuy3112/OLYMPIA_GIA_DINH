@@ -5,4 +5,5 @@ export interface Player {
     isCurrent: boolean;
     lastAnswer?: string;
     timestamp?: number;
+    isBuzzed?: boolean;
 }

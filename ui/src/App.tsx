@@ -6,7 +6,7 @@ import VuotDeoPage from './pages/contestant/VuotDeoPage';
 function App() {
   return (
     <div className='bg-[url(./image/background.jpg)]'>
-      <LamNongChungPage />
+      <LamNongCaNhanPage />
     </div>
   )
 }
