@@ -20,52 +20,43 @@ const LamNongCaNhanPage = () => {
         { code: 'P04T', name: 'Đình Oánh', score: 55, isCurrent: false, isBuzzed: false },
     ]);
     const [timer, setTimer] = useState(10);
-    const [hasPinged, setHasPinged] = useState(false); 
-    const [pingSuccessful, setPingSuccessful] = useState(false); // Trạng thái bấm chuông thành công
-    
-    // SỬ DỤNG HOOK WS
-    const { isConnected, sendBuzz } = useWebSocket(MATCH_CODE);
+    const [hasPinged, setHasPinged] = useState(false);
+    const [buzzerWinnerCode, setBuzzerWinnerCode] = useState<string | null>(null);
+    const { isConnected, sendBuzz, lastMessage } = useWebSocket(MATCH_CODE);
 
-    // --- LOGIC BẤM CHUÔNG ---
     const handlePing = useCallback(() => {
-        // Kiểm tra điều kiện gửi
-        if (!isConnected || hasPinged || timer <= 0) {
-            console.warn("Không thể bấm chuông: Ngắt kết nối, đã bấm, hoặc hết giờ.");
+        if (!isConnected || hasPinged || timer <= 0 || buzzerWinnerCode) {
             return;
         }
-
         const success = sendBuzz(CURRENT_PLAYER_CODE, QUESTION_CODE);
-
         if (success) {
-            console.log(`Người chơi ${CURRENT_PLAYER_CODE} đã gửi buzz.`);
-            setHasPinged(true); 
-            setPingSuccessful(true); // Đánh dấu đã gửi thành công
-            
-            // Cập nhật state players để hiển thị chuông ngay lập tức
-            setPlayers(prevPlayers => prevPlayers.map(p => 
-                p.code === CURRENT_PLAYER_CODE
-                    ? { ...p, hasPinged: true }
-                    : p
-            ));
+            setHasPinged(true);
         }
-    }, [isConnected, hasPinged, timer, sendBuzz]);
+    }, [isConnected, hasPinged, timer, sendBuzz, buzzerWinnerCode]);
 
-
-    // --- LOGIC TIMER ---
     useEffect(() => {
-        // Chỉ đếm ngược khi timer > 0 VÀ CHƯA BẤM CHUÔNG THÀNH CÔNG
-        if (timer > 0 && !pingSuccessful) { 
+        if (!lastMessage) return;
+        if (lastMessage.type === 'buzz_winner' && lastMessage.player_code) {
+            const winnerCode = lastMessage.player_code;
+            setBuzzerWinnerCode(winnerCode);
+            setPlayers(prevPlayers => prevPlayers.map(p => ({ 
+                ...p,
+                isBuzzed: p.code === winnerCode,
+            })));
+        }
+    }, [lastMessage]);
+
+    useEffect(() => {
+        if (timer > 0 && !buzzerWinnerCode) { 
             const intervalId = setInterval(() => {
                 setTimer(prevTimer => prevTimer - 1);
             }, 1000);
 
             return () => clearInterval(intervalId);
         }
-    }, [timer, pingSuccessful]); // Thêm pingSuccessful vào dependency
+    }, [timer, buzzerWinnerCode]); 
 
-
-    const isPingDisabled = hasPinged || timer <= 0 || !isConnected || pingSuccessful;
-
+    const isPingDisabled = hasPinged || timer <= 0 || !isConnected || !!buzzerWinnerCode;
 
     return (
         <div className="flex flex-col justify-start items-center min-h-screen">
@@ -80,7 +71,7 @@ const LamNongCaNhanPage = () => {
                 <div className="w-full max-w-7xl">
                     <QuestionArea 
                         title="LÀM NÓNG - LƯỢT CÁ NHÂN" 
-                        questionContent="Đoạn trailer chính thức..." 
+                        questionContent="Nếu 23 + 15 = 38 thì năm nay tôi bao nhiêu tuổi?" 
                         mediaUrl="../image/background.jpg" 
                         timerDisplay={timer.toString().padStart(2, '0')}
                     />
