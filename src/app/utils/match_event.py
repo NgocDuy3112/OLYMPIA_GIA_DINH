@@ -6,6 +6,11 @@ import json
 from app.logger import global_logger
 
 
+MATCH_STATUS_BUZZING = "buzzing"
+MATCH_STATUS_BUZZED = "buzzed"
+
+
+
 
 async def publish_ws_event(pubsub: Valkey, match_code: str, event: dict):
     """
@@ -40,8 +45,7 @@ async def trigger_start_time(
     match_code: str,
     question_code: str,
     time_limit: int,
-    event_type: str = "new_question",
-):
+) -> dict:
     """
     Set start_time & end_time for a question and broadcast event.
     time_limit: int (seconds)
@@ -50,28 +54,55 @@ async def trigger_start_time(
     end_time = start_time + time_limit
 
     try:
-        # RESET previous state and store new
         await pubsub.set(f"match:{match_code}:start_time", start_time)
         await pubsub.set(f"match:{match_code}:end_time", end_time)
         await pubsub.set(f"match:{match_code}:current_question_code", question_code)
+        await pubsub.set(f"match:{match_code}:buzz_status", MATCH_STATUS_BUZZING)
+        await pubsub.set(f"match:{match_code}:buzzer_winner", "None")
         await pubsub.set(f"match:{match_code}:locked", 0)
-
         global_logger.info(f"[START] {match_code} {question_code} start={start_time} end={end_time}")
-
         event = {
-            "type": event_type,
+            "type": "start_the_timer",
             "match_code": match_code,
             "question_code": question_code,
             "start_time": start_time,
             "time_limit": time_limit,
         }
         await pubsub.publish(f"match:{match_code}:updates", json.dumps(event))
-        global_logger.info(f"[WS] Broadcast {event_type} for question {question_code} in {match_code}")
+        global_logger.info(f"[WS] Broadcast 'start_the_timer' event for question {question_code} in {match_code}")
         asyncio.create_task(auto_time_up(pubsub, match_code, question_code, end_time))
-        return {"message": f"{event_type} triggered", "start_time": start_time, "end_time": end_time}
-
+        return {
+            "message": "'start_the_timer' triggered", 
+            "start_time": start_time, 
+            "end_time": end_time
+        }
     except Exception as e:
-        global_logger.error(f"[START] Failed for match={match_code}: {e}")
+        global_logger.error(f"[FAILED] Event 'start_the_timer' failed for match={match_code}: {e}")
+        raise
+
+
+
+async def pick_question(pubsub: Valkey, match_code: str, player_code: str, question_code: str) -> dict:
+    try:
+        await pubsub.set(f"match:{match_code}:picked_question_code", question_code)
+        await pubsub.set(f"match:{match_code}:picked_player_code", player_code)
+        global_logger.info(f"[PICKED] {match_code} {question_code} being picked by {player_code}")
+        event = {
+            "type": "pick_question",
+            "match_code": match_code,
+            "player_code": player_code,
+            "question_code": question_code
+        }
+        await pubsub.publish(f"match:{match_code}:updates", json.dumps(event))
+        global_logger.info(f"[WS] Broadcast 'pick_question' event for question {question_code}, picked by player {player_code} in {match_code}")
+        return {
+            'message': "'pick_question' triggered",
+            "match_code": match_code,
+            "player_code": player_code,
+            "question_code": question_code
+        }
+    except Exception as e:
+        global_logger.error(f"[FAILED] Event 'pick_question' failed for match={match_code}: {e}")
         raise
 
 
@@ -88,20 +119,49 @@ async def process_client_event(
     event_type = client_msg.get("type")
     player_code = client_msg.get("player_code")
     question_code = client_msg.get("question_code")
-
     if not player_code:
         global_logger.warning(f"[WS_PROCESS] Client message missing player_code: {client_msg}")
         return
 
     event = None
-    
+    current_status = await valkey.get(f"match:{match_code}:status").decode('utf-8')
+    buzzer_winner = await valkey.get(f"match:{match_code}:buzzer_winner").decode('utf-8')
+
     if event_type == "buzz":
+        if current_status != MATCH_STATUS_BUZZING:
+            global_logger.debug(f"[BUZZ_REJECTED] {player_code} buzz rejected. Status is {current_status}")
+            await publish_ws_event(valkey, match_code, {
+                "type": "buzz_rejected", 
+                "player_code": player_code, 
+                "reason": f"Not in BUZZING state ({current_status})"
+            })
+            return
+
+        if buzzer_winner != "None":
+            global_logger.debug(f"[BUZZ_REJECTED] {player_code} buzz rejected. Winner already set: {buzzer_winner}")
+            await publish_ws_event(valkey, match_code, {
+                "type": "buzz_rejected", 
+                "player_code": player_code, 
+                "reason": f"Winner already set: {buzzer_winner}"
+            })
+            return
+
+        buzz_time = time.time()
+        await valkey.set(f"match:{match_code}:buzzer_winner", player_code)
+
         event = {
-            "type": "player_buzzed",
+            "type": "buzzer_winner",
+            "match_code": match_code,
+            "question_code": question_code,
+            "player_code": player_code,
+            "buzzed_at": buzz_time,
+        }
+    elif event_type == "pick_question":
+        event = {
+            "type": "player_picked_question",
             "player_code": player_code,
             "question_code": question_code
         }
-
     elif event_type == "answer":
         answer = client_msg.get("answer")
         event = {
