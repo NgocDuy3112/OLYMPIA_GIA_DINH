@@ -127,14 +127,23 @@ async def process_client_event(
     player_code = client_msg.get("player_code")
     question_code = client_msg.get("question_code")
     
+    winner_key = f"match:{match_code}:buzzer_winner"
+
+    # Reset winner key if it is expired or not exist
+    winner_exists = await valkey.exists(winner_key)
+    if not winner_exists:
+        await valkey.delete(winner_key)
+        global_logger.debug(f"[DEBUG] Reset winner key: {winner_key} because it did not exist or expired.")
+
+    # Check current buzz status
     if not player_code:
         global_logger.warning(f"[WS_PROCESS] Client message missing player_code: {client_msg}")
         return
 
-    # Lấy trạng thái hiện tại (Đã loại bỏ việc gọi get_match_status)
     current_status_raw = await valkey.get(f"match:{match_code}:buzz_status")
     current_status = current_status_raw.decode('utf-8') if current_status_raw else ""
-    
+    global_logger.debug(f"[DEBUG] {player_code} buzz attempt. Current status: {current_status}")
+
     event = None
 
     if event_type == "buzz":
@@ -147,14 +156,15 @@ async def process_client_event(
             })
             return
 
-        winner_key = f"match:{match_code}:buzzer_winner"
+        
         buzz_time = time.time()
 
         is_first = await valkey.setnx(winner_key, json.dumps({
             "player_code": player_code,
             "time": buzz_time
         }))
-        # -------------------------------
+        global_logger.debug(f"[DEBUG] setnx result for {winner_key} = {is_first}")
+
         
         if is_first:
             await valkey.set(f"match:{match_code}:buzz_status", MATCH_STATUS_BUZZED)

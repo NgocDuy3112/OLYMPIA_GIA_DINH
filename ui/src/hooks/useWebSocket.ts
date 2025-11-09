@@ -12,8 +12,7 @@ interface WebSocketPayload {
 
 
 
-const createWsUrl = (matchCode: string) => 
-    `ws://localhost:8000/controller/ws/match/${matchCode}`; 
+const createWsUrl = (matchCode: string) => `ws://localhost:8000/controller/ws/match/${matchCode}`; 
 
 
 
@@ -57,7 +56,7 @@ export const useWebSocket = (matchCode: string) => {
     }, [matchCode]); 
 
 
-    const sendMessage = useCallback((payload: WebSocketPayload): boolean => {
+    const sendMessage = useCallback(async (payload: WebSocketPayload): Promise<boolean> => {
         if (ws.current && ws.current.readyState === WebSocket.OPEN) {
             ws.current.send(JSON.stringify(payload));
             console.log("[WS] Sent payload:", payload);
@@ -69,8 +68,8 @@ export const useWebSocket = (matchCode: string) => {
     }, []);
 
 
-    const sendAnswer = useCallback((playerCode: string, questionCode: string, answer: string): boolean => {
-        return sendMessage({
+    const sendAnswer = useCallback(async (playerCode: string, questionCode: string, answer: string): Promise<boolean> => {
+        return await sendMessage({
             type: "answer",
             player_code: playerCode,
             question_code: questionCode,
@@ -79,8 +78,8 @@ export const useWebSocket = (matchCode: string) => {
     }, [sendMessage]);
 
 
-    const sendBuzz = useCallback((playerCode: string, questionCode: string): boolean => {
-        return sendMessage({
+    const sendBuzz = useCallback(async (playerCode: string, questionCode: string): Promise<boolean> => {
+        return await sendMessage({
             type: "buzz",
             player_code: playerCode,
             question_code: questionCode,
@@ -88,8 +87,8 @@ export const useWebSocket = (matchCode: string) => {
     }, [sendMessage]);
 
 
-    const sendBuzzCnv = useCallback((playerCode: string): boolean => {
-        return sendMessage({
+    const sendBuzzCnv = useCallback(async (playerCode: string): Promise<boolean> => {
+        return await sendMessage({
             type: "buzz_cnv",
             player_code: playerCode,
         });

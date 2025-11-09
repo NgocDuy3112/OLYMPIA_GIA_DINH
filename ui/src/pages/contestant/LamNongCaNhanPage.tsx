@@ -6,8 +6,8 @@ import type { Player } from "@/types/player";
 import { useWebSocket } from "@/hooks/useWebSocket";
 
 
-const MATCH_CODE = "M01T"; 
-const CURRENT_PLAYER_CODE = 'P01T'; 
+const MATCH_CODE = "M01T";
+const CURRENT_PLAYER_CODE = 'P01T';
 const QUESTION_CODE = 'LN_R1_01';
 const TIME_LIMIT = 5;
 
@@ -15,7 +15,7 @@ const TIME_LIMIT = 5;
 
 const LamNongCaNhanPage = () => {
     const [players, setPlayers] = useState<Player[]>([
-        { code: 'P01T', name: 'Hữu Khang', score: 60, isCurrent: true, isBuzzed: false }, 
+        { code: 'P01T', name: 'Hữu Khang', score: 60, isCurrent: true, isBuzzed: false },
         { code: 'P02T', name: 'Kiến Trúc', score: 45, isCurrent: false, isBuzzed: false },
         { code: 'P03T', name: 'Phượng Hoàng', score: 100, isCurrent: false, isBuzzed: false },
         { code: 'P04T', name: 'Đình Oánh', score: 55, isCurrent: false, isBuzzed: false },
@@ -25,11 +25,11 @@ const LamNongCaNhanPage = () => {
     const [buzzerWinnerCode, setBuzzerWinnerCode] = useState<string | null>(null);
     const { isConnected, sendBuzz, lastMessage } = useWebSocket(MATCH_CODE);
 
-    const handlePing = useCallback(() => {
+    const handlePing = useCallback(async () => {
         if (!isConnected || hasPinged || timer <= 0 || buzzerWinnerCode) {
-            return; 
+            return;
         }
-        const success = sendBuzz(CURRENT_PLAYER_CODE, QUESTION_CODE);
+        const success = await sendBuzz(CURRENT_PLAYER_CODE, QUESTION_CODE);
         if (success) {
             setHasPinged(true);
         }
@@ -37,31 +37,36 @@ const LamNongCaNhanPage = () => {
 
     useEffect(() => {
         if (!lastMessage) return;
-        if (lastMessage.type === 'start_the_timer') {
-            setHasPinged(false);
-            setBuzzerWinnerCode(null);
-            setTimer(lastMessage.time_limit);
-            setPlayers(prevPlayers => prevPlayers.map(p => ({ ...p, isBuzzed: false })));
-        }
-        if (lastMessage.type === 'buzzer_winner' && lastMessage.player_code) {
-            const winnerCode = lastMessage.player_code;
-            setBuzzerWinnerCode(winnerCode);
-            setPlayers(prevPlayers => prevPlayers.map(p => ({ 
-                ...p,
-                isBuzzed: p.code === winnerCode,
-            })));
+        const data = typeof lastMessage === 'string' ? JSON.parse(lastMessage) : lastMessage;
+
+        switch (data.type) {
+            case 'start_the_timer':
+                setHasPinged(false);
+                setBuzzerWinnerCode(null);
+                setTimer(data.time_limit);
+                setPlayers(prev => prev.map(p => ({ ...p, isBuzzed: false })));
+                break;
+            case 'buzzer_winner':
+                setBuzzerWinnerCode(data.player_code);
+                setPlayers(prev => prev.map(p => ({
+                    ...p,
+                    isBuzzed: p.code === data.player_code,
+                })));
+                break;
+            default:
+                break;
         }
     }, [lastMessage]);
 
     useEffect(() => {
-        if (timer > 0 && !buzzerWinnerCode) { 
+        if (timer > 0 && !buzzerWinnerCode) {
             const intervalId = setInterval(() => {
                 setTimer(prevTimer => prevTimer - 1);
             }, 1000);
 
             return () => clearInterval(intervalId);
         }
-    }, [timer, buzzerWinnerCode]); 
+    }, [timer, buzzerWinnerCode]);
 
     const isPingDisabled = hasPinged || timer <= 0 || !isConnected || !!buzzerWinnerCode;
 
@@ -76,19 +81,19 @@ const LamNongCaNhanPage = () => {
             {/* QuestionArea */}
             <div className="p-5 w-full flex justify-center">
                 <div className="w-full max-w-7xl">
-                    <QuestionArea 
-                        title="LÀM NÓNG - LƯỢT CÁ NHÂN" 
-                        questionContent="Nếu 23 + 15 = 38 thì năm nay tôi bao nhiêu tuổi?" 
-                        mediaUrl="../image/background.jpg" 
+                    <QuestionArea
+                        title="LÀM NÓNG - LƯỢT CÁ NHÂN"
+                        questionContent="Nếu 23 + 15 = 38 thì năm nay tôi bao nhiêu tuổi?"
+                        mediaUrl="../image/background.jpg"
                         timerDisplay={timer.toString().padStart(2, '0')}
                     />
                 </div>
             </div>
             <div className="p-3 w-full flex justify-center">
                 <div className="w-full max-w-7xl">
-                    <PingButton 
-                        isEnabled={!isPingDisabled} 
-                        onSubmit={handlePing} 
+                    <PingButton
+                        isEnabled={!isPingDisabled}
+                        onSubmit={handlePing}
                     />
                 </div>
             </div>

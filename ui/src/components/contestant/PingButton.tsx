@@ -11,13 +11,13 @@ interface PingButtonProps {
 
 
 const PingButton: React.FC<PingButtonProps> = ({isEnabled, onSubmit}) => {
-    const isDisbaled = !isEnabled;
+    const isDisaled = !isEnabled;
     return (
         <button
             onClick={onSubmit}
-            disabled={isDisbaled}
+            disabled={isDisaled}
             className={`w-full px-4 h-auto rounded-lg text-base font-bold shadow-md transition duration-200 flex items-center justify-center 
-                ${isDisbaled
+                ${isDisaled
                     ? 'bg-red-900 ring-red-600 ring-4 text-red-300 cursor-not-allowed'
                     : 'bg-red-600 ring-red-300 ring-4 text-white'
                 }`
