@@ -8,8 +8,7 @@ from app.logger import global_logger
 
 MATCH_STATUS_BUZZING = "buzzing"
 MATCH_STATUS_BUZZED = "buzzed"
-
-
+ANSWER_TIME_LIMIT = 5
 
 
 async def publish_ws_event(pubsub: Valkey, match_code: str, event: dict):
@@ -29,7 +28,12 @@ async def auto_time_up(pubsub: Valkey, match_code: str, question_code: str, end_
     """Automatically fire time_up event when time_limit ends."""
     delay = max(0, end_time - time.time())
     await asyncio.sleep(delay)
-    await pubsub.set(f"match:{match_code}:locked", 1)
+    
+    # Cập nhật trạng thái và loại bỏ khóa nếu nó chưa bị khóa bởi buzz (đã hết giờ đọc)
+    current_status_raw = await pubsub.get(f"match:{match_code}:buzz_status")
+    if current_status_raw and current_status_raw.decode('utf-8') == MATCH_STATUS_BUZZING:
+        await pubsub.set(f"match:{match_code}:buzz_status", "TIME_UP")
+    
     event = {
         "type": "time_up",
         "match_code": match_code,
@@ -57,9 +61,11 @@ async def trigger_start_time(
         await pubsub.set(f"match:{match_code}:start_time", start_time)
         await pubsub.set(f"match:{match_code}:end_time", end_time)
         await pubsub.set(f"match:{match_code}:current_question_code", question_code)
+
         await pubsub.set(f"match:{match_code}:buzz_status", MATCH_STATUS_BUZZING)
-        await pubsub.set(f"match:{match_code}:buzzer_winner", "None")
-        await pubsub.set(f"match:{match_code}:locked", 0)
+        await pubsub.delete(f"match:{match_code}:buzzer_winner") 
+        # --------------------------------------------------------------------
+
         global_logger.info(f"[START] {match_code} {question_code} start={start_time} end={end_time}")
         event = {
             "type": "start_the_timer",
@@ -67,6 +73,7 @@ async def trigger_start_time(
             "question_code": question_code,
             "start_time": start_time,
             "time_limit": time_limit,
+            "status": MATCH_STATUS_BUZZING
         }
         await pubsub.publish(f"match:{match_code}:updates", json.dumps(event))
         global_logger.info(f"[WS] Broadcast 'start_the_timer' event for question {question_code} in {match_code}")
@@ -114,20 +121,25 @@ async def process_client_event(
 ):
     """
     Process all events and publish to Valkey.
-    Assuming the locked check is already done.
+    This uses SETNX (atomic operation) to determine the buzzer winner.
     """
     event_type = client_msg.get("type")
     player_code = client_msg.get("player_code")
     question_code = client_msg.get("question_code")
+    
     if not player_code:
         global_logger.warning(f"[WS_PROCESS] Client message missing player_code: {client_msg}")
         return
 
+    # Lấy trạng thái hiện tại (Đã loại bỏ việc gọi get_match_status)
+    current_status_raw = await valkey.get(f"match:{match_code}:buzz_status")
+    current_status = current_status_raw.decode('utf-8') if current_status_raw else ""
+    
     event = None
-    current_status = await valkey.get(f"match:{match_code}:status").decode('utf-8')
-    buzzer_winner = await valkey.get(f"match:{match_code}:buzzer_winner").decode('utf-8')
 
     if event_type == "buzz":
+        
+        # 1. Kiểm tra trạng thái: Chỉ được buzz khi ở trạng thái BUZZING
         if current_status != MATCH_STATUS_BUZZING:
             global_logger.debug(f"[BUZZ_REJECTED] {player_code} buzz rejected. Status is {current_status}")
             await publish_ws_event(valkey, match_code, {
@@ -137,44 +149,71 @@ async def process_client_event(
             })
             return
 
-        if buzzer_winner != "None":
-            global_logger.debug(f"[BUZZ_REJECTED] {player_code} buzz rejected. Winner already set: {buzzer_winner}")
+        winner_key = f"match:{match_code}:buzzer_winner"
+        buzz_time = time.time()
+
+        is_first = await valkey.setnx(winner_key, json.dumps({
+            "player_code": player_code,
+            "time": buzz_time
+        }))
+        # -------------------------------
+        
+        if is_first:
+            await valkey.set(f"match:{match_code}:buzz_status", MATCH_STATUS_BUZZED)
+            
+            global_logger.info(
+                f"[BUZZ_WIN] {player_code} is the first buzzer winner at {buzz_time}"
+            )
+            event = {
+                "type": "buzzer_winner",
+                "match_code": match_code,
+                "question_code": question_code,
+                "winner_id": player_code,
+                "buzzed_at": buzz_time,
+                "new_status": MATCH_STATUS_BUZZED
+            }
+            await valkey.expire(winner_key, ANSWER_TIME_LIMIT * 2) 
+
+        else:
+            global_logger.warning(
+                f"[BUZZ_SKIP] {player_code} buzz rejected: Winner already set by someone else."
+            )
             await publish_ws_event(valkey, match_code, {
                 "type": "buzz_rejected", 
                 "player_code": player_code, 
-                "reason": f"Winner already set: {buzzer_winner}"
+                "reason": "Another player buzzed first."
             })
             return
-
-        buzz_time = time.time()
-        await valkey.set(f"match:{match_code}:buzzer_winner", player_code)
-
-        event = {
-            "type": "buzzer_winner",
-            "match_code": match_code,
-            "question_code": question_code,
-            "player_code": player_code,
-            "buzzed_at": buzz_time,
-        }
+            
     elif event_type == "pick_question":
         event = {
             "type": "player_picked_question",
             "player_code": player_code,
             "question_code": question_code
         }
+        
     elif event_type == "answer":
-        answer = client_msg.get("answer")
-        event = {
-            "type": "player_answered",
-            "player_code": player_code,
-            "question_code": question_code,
-            "answer": answer,
-        }
+        winner_data_raw = await valkey.get(f"match:{match_code}:buzzer_winner")
+        winner_data = json.loads(winner_data_raw.decode('utf-8')) if winner_data_raw else {}
+        buzzer_winner_code = winner_data.get("player_code")
+        if current_status == MATCH_STATUS_BUZZED and player_code == buzzer_winner_code:
+            answer = client_msg.get("answer")
+            event = {
+                "type": "player_answered",
+                "player_code": player_code,
+                "question_code": question_code,
+                "answer": answer,
+            }
+        else:
+            global_logger.warning(f"[ANSWER_REJECTED] {player_code} tried to answer but is not the winner or phase is wrong.")
+            return
+
     elif event_type == "buzz_cnv":
         event = {
             "type": "player_buzzed_cnv",
             "player_code": player_code,
         }
+    
     if event:
         await valkey.publish(f"match:{match_code}:updates", json.dumps(event))
         global_logger.debug(f"[WS_PUBLISH] Published {event_type} for {player_code} in {match_code}")
