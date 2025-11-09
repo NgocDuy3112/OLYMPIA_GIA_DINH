@@ -168,10 +168,11 @@ async def process_client_event(
                 "type": "buzzer_winner",
                 "match_code": match_code,
                 "question_code": question_code,
-                "winner_id": player_code,
+                "player_code": player_code,
                 "buzzed_at": buzz_time,
                 "new_status": MATCH_STATUS_BUZZED
             }
+            await publish_ws_event(valkey, match_code, event)
             await valkey.expire(winner_key, ANSWER_TIME_LIMIT * 2) 
 
         else:
