@@ -138,8 +138,6 @@ async def process_client_event(
     event = None
 
     if event_type == "buzz":
-        
-        # 1. Kiểm tra trạng thái: Chỉ được buzz khi ở trạng thái BUZZING
         if current_status != MATCH_STATUS_BUZZING:
             global_logger.debug(f"[BUZZ_REJECTED] {player_code} buzz rejected. Status is {current_status}")
             await publish_ws_event(valkey, match_code, {
@@ -194,20 +192,13 @@ async def process_client_event(
         }
         
     elif event_type == "answer":
-        winner_data_raw = await valkey.get(f"match:{match_code}:buzzer_winner")
-        winner_data = json.loads(winner_data_raw.decode('utf-8')) if winner_data_raw else {}
-        buzzer_winner_code = winner_data.get("player_code")
-        if current_status == MATCH_STATUS_BUZZED and player_code == buzzer_winner_code:
-            answer = client_msg.get("answer")
-            event = {
-                "type": "player_answered",
-                "player_code": player_code,
-                "question_code": question_code,
-                "answer": answer,
-            }
-        else:
-            global_logger.warning(f"[ANSWER_REJECTED] {player_code} tried to answer but is not the winner or phase is wrong.")
-            return
+        answer = client_msg.get("answer")
+        event = {
+            "type": "player_answered",
+            "player_code": player_code,
+            "question_code": question_code,
+            "answer": answer,
+        }
 
     elif event_type == "buzz_cnv":
         event = {
