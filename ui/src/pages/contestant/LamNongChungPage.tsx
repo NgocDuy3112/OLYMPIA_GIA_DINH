@@ -30,7 +30,7 @@ const LamNongChungPage = () => {
     ]);
     const [timer, setTimer] = useState(MAX_TIME);
     const [answerInput, setAnswerInput] = useState('');
-    const [submitTime, setSubmitTime] = useState<number | undefined>(undefined);
+    const [ , setSubmitTime] = useState<number | undefined>(undefined);
     const [hasAnswered, setHasAnswered] = useState(false); 
     const { isConnected, lastMessage, sendAnswer } = useWebSocket(MATCH_CODE);
 
@@ -40,11 +40,9 @@ const LamNongChungPage = () => {
         const trimmedAnswer = answerInput.trim();
 
         if (!trimmedAnswer || !isConnected || timer <= 0) {
-            console.warn("Không thể gửi đáp án.");
             return;
         }
         const submitTimestampMs = Date.now();
-        const currentTime = timer;
         const success = sendAnswer(CURRENT_PLAYER_CODE, QUESTION_CODE, trimmedAnswer);
 
         if (success) {
@@ -106,7 +104,7 @@ const LamNongChungPage = () => {
                 }
             } 
             
-            if (msg.type === 'new_question') {
+            if (msg.type === 'start_the_timer') {
                 setTimer(MAX_TIME);
                 setHasAnswered(false);
                 timerStartTimeRef.current = Date.now();

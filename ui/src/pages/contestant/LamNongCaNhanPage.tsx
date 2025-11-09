@@ -1,15 +1,16 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from "react";
 import PlayerBoard from "@/components/contestant/PlayerBoard";
 import QuestionArea from "@/components/contestant/QuestionArea";
 import PingButton from "@/components/contestant/PingButton";
 import type { Player } from "@/types/player";
-import { useWebSocket } from "@/hooks/useWebSocket"; // IMPORT HOOK WS
+import { useWebSocket } from "@/hooks/useWebSocket";
 
 
-const MATCH_CODE = "M01T_CN"; 
+const MATCH_CODE = "M01T"; 
 const CURRENT_PLAYER_CODE = 'P01T'; 
 const QUESTION_CODE = 'LN_R1_01';
+const TIME_LIMIT = 5;
+
 
 
 const LamNongCaNhanPage = () => {
@@ -19,14 +20,14 @@ const LamNongCaNhanPage = () => {
         { code: 'P03T', name: 'Phượng Hoàng', score: 100, isCurrent: false, isBuzzed: false },
         { code: 'P04T', name: 'Đình Oánh', score: 55, isCurrent: false, isBuzzed: false },
     ]);
-    const [timer, setTimer] = useState(10);
+    const [timer, setTimer] = useState(TIME_LIMIT);
     const [hasPinged, setHasPinged] = useState(false);
     const [buzzerWinnerCode, setBuzzerWinnerCode] = useState<string | null>(null);
     const { isConnected, sendBuzz, lastMessage } = useWebSocket(MATCH_CODE);
 
     const handlePing = useCallback(() => {
         if (!isConnected || hasPinged || timer <= 0 || buzzerWinnerCode) {
-            return;
+            return; 
         }
         const success = sendBuzz(CURRENT_PLAYER_CODE, QUESTION_CODE);
         if (success) {
@@ -36,7 +37,13 @@ const LamNongCaNhanPage = () => {
 
     useEffect(() => {
         if (!lastMessage) return;
-        if (lastMessage.type === 'buzz_winner' && lastMessage.player_code) {
+        if (lastMessage.type === 'start_the_timer') {
+            setHasPinged(false);
+            setBuzzerWinnerCode(null);
+            setTimer(lastMessage.time_limit);
+            setPlayers(prevPlayers => prevPlayers.map(p => ({ ...p, isBuzzed: false })));
+        }
+        if (lastMessage.type === 'buzzer_winner' && lastMessage.player_code) {
             const winnerCode = lastMessage.player_code;
             setBuzzerWinnerCode(winnerCode);
             setPlayers(prevPlayers => prevPlayers.map(p => ({ 

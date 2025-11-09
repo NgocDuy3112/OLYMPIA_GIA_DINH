@@ -1,19 +1,68 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import PlayerBoard from "@/components/contestant/PlayerBoard";
 import QuestionArea from "@/components/contestant/QuestionArea";
 import PingButton from "@/components/contestant/PingButton";
 import type { Player } from "@/types/player";
+import { useWebSocket } from "@/hooks/useWebSocket"; 
 
+
+const MATCH_CODE = "M01T_CN"; 
+const CURRENT_PLAYER_CODE = 'P01T'; 
+const QUESTION_CODE = 'LN_R1_01';
 
 
 const NuocRutCaNhanPage = () => {
     const [players, setPlayers] = useState<Player[]>([
-        { code: 'C1', name: 'Hữu Khang', score: 60, isCurrent: true },
-        { code: 'C2', name: 'Kiến Trúc', score: 45, isCurrent: false },
-        { code: 'C3', name: 'Phượng Hoàng', score: 100, isCurrent: false },
-        { code: 'C4', name: 'Đình Oánh', score: 55, isCurrent: false},
+        { code: 'P01T', name: 'Hữu Khang', score: 60, isCurrent: true, isBuzzed: false }, 
+        { code: 'P02T', name: 'Kiến Trúc', score: 45, isCurrent: false, isBuzzed: false },
+        { code: 'P03T', name: 'Phượng Hoàng', score: 100, isCurrent: false, isBuzzed: false },
+        { code: 'P04T', name: 'Đình Oánh', score: 55, isCurrent: false, isBuzzed: false },
     ]);
     const [timer, setTimer] = useState(10);
+    const [hasPinged, setHasPinged] = useState(false);
+    const [buzzerWinnerCode, setBuzzerWinnerCode] = useState<string | null>(null);
+    const { isConnected, sendBuzz, lastMessage } = useWebSocket(MATCH_CODE);
+
+    const handlePing = useCallback(() => {
+        if (!isConnected || hasPinged || timer <= 0 || buzzerWinnerCode) {
+            return;
+        }
+        const success = sendBuzz(CURRENT_PLAYER_CODE, QUESTION_CODE);
+        if (success) {
+            setHasPinged(true);
+        }
+    }, [isConnected, hasPinged, timer, sendBuzz, buzzerWinnerCode]);
+
+    useEffect(() => {
+        if (!lastMessage) return;
+        if (lastMessage.type === 'start_the_timer') {
+            setHasPinged(false);
+            setBuzzerWinnerCode(null);
+            setTimer(lastMessage.time_limit || 10);
+            setPlayers(prevPlayers => prevPlayers.map(p => ({ ...p, isBuzzed: false })));
+        }
+        if (lastMessage.type === 'buzzer_winner' && lastMessage.player_code) {
+            const winnerCode = lastMessage.player_code;
+            setBuzzerWinnerCode(winnerCode);
+            setPlayers(prevPlayers => prevPlayers.map(p => ({ 
+                ...p,
+                isBuzzed: p.code === winnerCode,
+            })));
+        }
+    }, [lastMessage]);
+
+    useEffect(() => {
+        if (timer > 0 && !buzzerWinnerCode) { 
+            const intervalId = setInterval(() => {
+                setTimer(prevTimer => prevTimer - 1);
+            }, 1000);
+
+            return () => clearInterval(intervalId);
+        }
+    }, [timer, buzzerWinnerCode]); 
+
+    const isPingDisabled = hasPinged || timer <= 0 || !isConnected || !!buzzerWinnerCode;
+
     return (
         <div className="flex flex-col justify-start items-center min-h-screen">
             {/* Scoreboard */}
@@ -25,12 +74,20 @@ const NuocRutCaNhanPage = () => {
             {/* QuestionArea */}
             <div className="p-5 w-full flex justify-center">
                 <div className="w-full max-w-7xl">
-                    <QuestionArea title="NƯỚC RÚT - LƯỢT CÁ NHÂN" questionContent="Đoạn trailer chính thức của giải đấu Liên Quân quốc tế AIC 2024 có xuất hiện hình ảnh của một chiếc xe lửa được sử dụng cho một tuyến đường sắt là một phần của hệ thống tuyến đường sắt xuyên lục địa Á - Âu. Tuyến đường sắt này có tên là gì, và tuyến đường sắt này không đi qua (các) thành phố nào trong các thành phố sau: Hà Nội (1), Hà Nam (2), Nam Định (3), Ninh Bình (4), Thanh Hoá (5), Nghệ An (6), Hà Tĩnh (7), Quảng Bình (8), Quảng Trị (9), Thừa Thiên Huế (10), Đà Nẵng (11), Quảng Nam (12), Quảng Ngãi (13), Bình Định (14), Phú Yên (15), Khánh Hoà (16), Ninh Thuận (17), Bình Thuận (18), Lâm Đồng (19), Đồng Nai (20), Bình Dương (21), Thành phố Hồ Chí Minh (22), Cần Thơ (23), Đồng Tháp (24)?" mediaUrl="../image/background.jpg" timerDisplay="00"/>
+                    <QuestionArea 
+                        title="NƯỚC RÚT - LƯỢT CÁ NHÂN" 
+                        questionContent="Nếu 23 + 15 = 38 thì năm nay tôi bao nhiêu tuổi?" 
+                        mediaUrl="../image/background.jpg" 
+                        timerDisplay={timer.toString().padStart(2, '0')}
+                    />
                 </div>
             </div>
             <div className="p-3 w-full flex justify-center">
                 <div className="w-full max-w-7xl">
-                    <PingButton isEnabled={true} onSubmit={() => setAnswerInput('')} />
+                    <PingButton 
+                        isEnabled={!isPingDisabled} 
+                        onSubmit={handlePing} 
+                    />
                 </div>
             </div>
         </div>
