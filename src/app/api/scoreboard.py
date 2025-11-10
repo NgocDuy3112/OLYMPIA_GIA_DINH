@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from app.dependencies.db import get_db, get_valkey_cache
+from app.dependencies.db import get_db, get_valkey
 from app.dependencies.user import authorize_user
 from app.core.scoreboard import *
 
@@ -18,7 +18,7 @@ scoreboard_router = APIRouter(prefix='/scoreboard', tags=['Bảng điểm'])
         500: {'description': 'Internal Server Error'}
     }
 )
-async def get_recent_cumulative_timeline_scoreboard(match_code: str, cache: Valkey=Depends(get_valkey_cache)):
+async def get_recent_cumulative_timeline_scoreboard(match_code: str, cache: Valkey=Depends(get_valkey)):
     return await get_recent_cumulative_timeline_scoreboard_from_cache(match_code, cache)
 
 

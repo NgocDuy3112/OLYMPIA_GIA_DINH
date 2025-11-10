@@ -4,8 +4,9 @@ import PlayerBoard from "@/components/contestant/PlayerBoard";
 import QuestionArea from "@/components/contestant/QuestionArea";
 import InputAnswerArea from "@/components/contestant/InputAnswerArea";
 import SubmitAnswerButton from "@/components/contestant/SubmitAnswerButton";
-import type { Player } from "@/types/player";
 import { useWebSocket } from "@/hooks/useWebSocket";
+import type { Player } from "@/types/player";
+
 
 
 const MATCH_CODE = "M01T"; 
@@ -28,22 +29,22 @@ const LamNongChungPage = () => {
         { code: 'P03T', name: 'Phượng Hoàng', score: 100, isCurrent: false, lastAnswer: '' },
         { code: 'P04T', name: 'Đình Oánh', score: 55, isCurrent: false, lastAnswer: '' },
     ]);
-    const [timer, setTimer] = useState(MAX_TIME);
+    const [timer, setTimer] = useState(0);
     const [answerInput, setAnswerInput] = useState('');
-    const [ , setSubmitTime] = useState<number | undefined>(undefined);
-    const [hasAnswered, setHasAnswered] = useState(false); 
+    const [, setSubmitTime] = useState<number | undefined>(undefined);
+    const [, setHasAnswered] = useState(false); 
     const { isConnected, lastMessage, sendAnswer } = useWebSocket(MATCH_CODE);
 
     const timerStartTimeRef = useRef<number | null>(null);
 
-    const handleSubmitAnswer = useCallback(() => {
+    const handleSubmitAnswer = useCallback(async () => {
         const trimmedAnswer = answerInput.trim();
 
         if (!trimmedAnswer || !isConnected || timer <= 0) {
             return;
         }
         const submitTimestampMs = Date.now();
-        const success = sendAnswer(CURRENT_PLAYER_CODE, QUESTION_CODE, trimmedAnswer);
+        const success = await sendAnswer(CURRENT_PLAYER_CODE, QUESTION_CODE, trimmedAnswer, submitTimestampMs);
 
         if (success) {
             let finalTimestamp: number;
@@ -66,10 +67,9 @@ const LamNongChungPage = () => {
                     : p
             ));
         }
-    }, [answerInput, isConnected, sendAnswer, timer, hasAnswered, setPlayers]);
+    }, [answerInput, isConnected, sendAnswer, timer, setPlayers]);
 
 
-    // --- LOGIC TIMER ---
     useEffect(() => {
         timerStartTimeRef.current = Date.now() - (MAX_TIME - timer) * 1000;
         if (timer > 0) {
@@ -110,7 +110,7 @@ const LamNongChungPage = () => {
                 timerStartTimeRef.current = Date.now();
             }
         }
-    }, [lastMessage, setPlayers, answerInput]);
+    }, [lastMessage, setPlayers]);
 
     const timerDisplay = timer.toString().padStart(2, '0');
     const isSubmissionDisabled = !isConnected || timer <= 0;

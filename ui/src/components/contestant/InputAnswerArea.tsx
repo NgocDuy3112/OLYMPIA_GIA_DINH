@@ -19,10 +19,11 @@ const InputAnswerArea: React.FC<InputAnswerAreaProps> = ({
 }) => {
     const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter') {
+            event.preventDefault(); 
             if (event.nativeEvent.isComposing || !answerInput.trim()) {
                 return;
             }
-            event.preventDefault(); 
+            
             if (!isDisabled) {
                 onSubmit();
                 setAnswerInput('');

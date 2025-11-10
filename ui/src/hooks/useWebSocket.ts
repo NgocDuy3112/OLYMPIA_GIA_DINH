@@ -77,12 +77,13 @@ export const useWebSocket = (matchCode: string) => {
     }, []);
 
 
-    const sendAnswer = useCallback(async (playerCode: string, questionCode: string, answer: string): Promise<boolean> => {
+    const sendAnswer = useCallback(async (playerCode: string, questionCode: string, answer: string, timestamp: number): Promise<boolean> => {
         return await sendMessage({
             type: "answer",
             player_code: playerCode,
             question_code: questionCode,
             answer: answer.trim(),
+            timestamp: timestamp
         });
     }, [sendMessage]);
 
@@ -91,7 +92,7 @@ export const useWebSocket = (matchCode: string) => {
         return await sendMessage({
             type: "buzz",
             player_code: playerCode,
-            question_code: questionCode,
+            question_code: questionCode
         });
     }, [sendMessage]);
 

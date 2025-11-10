@@ -59,14 +59,14 @@ const LamNongCaNhanPage = () => {
     }, [lastMessage]);
 
     useEffect(() => {
-        if (timer > 0 && !buzzerWinnerCode) {
+        if (timer > 0) {
             const intervalId = setInterval(() => {
                 setTimer(prevTimer => prevTimer - 1);
             }, 1000);
 
             return () => clearInterval(intervalId);
         }
-    }, [timer, buzzerWinnerCode]);
+    }, [timer]);
 
     const isPingDisabled = hasPinged || timer <= 0 || !isConnected || !!buzzerWinnerCode;
 

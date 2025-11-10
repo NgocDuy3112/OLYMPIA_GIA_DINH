@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from app.core.controller import *
-from app.dependencies.db import get_valkey_pubsub
+from app.dependencies.db import get_valkey
 from app.dependencies.user import authorize_user
 
 
@@ -19,7 +19,7 @@ controller_router = APIRouter(prefix='/controller', tags=['Điều khiển'])
 )
 async def trigger_start_question_api(
     request_data: StartQuestionRequest,
-    pubsub: Valkey=Depends(get_valkey_pubsub)
+    pubsub: Valkey=Depends(get_valkey)
 ):
     return await trigger_start_question(request_data, pubsub)
 
@@ -30,7 +30,7 @@ async def trigger_start_question_api(
 async def match_websocket_endpoint(
     websocket: WebSocket,
     match_code: str,
-    valkey: Valkey = Depends(get_valkey_pubsub),
+    valkey: Valkey = Depends(get_valkey),
 ):
     """
     WebSocket endpoint for a match.

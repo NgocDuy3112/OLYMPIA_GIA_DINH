@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from app.dependencies.db import get_db, get_valkey_cache
+from app.dependencies.db import get_db, get_valkey
 from app.dependencies.user import authorize_user
 from app.schema.record import *
 from app.core.record import *
@@ -65,7 +65,7 @@ async def get_all_records_from_match_code_to_excel_file(match_code: str, session
         500: {'description': 'Internal Server Error'}
     }
 )
-async def post_record(request: PostRecordRequest, cache: Valkey=Depends(get_valkey_cache), session: AsyncSession=Depends(get_db)):
+async def post_record(request: PostRecordRequest, cache: Valkey=Depends(get_valkey), session: AsyncSession=Depends(get_db)):
     return await post_record_to_db(request, cache, session)
 
 
@@ -80,5 +80,5 @@ async def post_record(request: PostRecordRequest, cache: Valkey=Depends(get_valk
         500: {'description': 'Internal Server Error'}
     }
 )
-async def put_record(request: PutRecordRequest, cache: Valkey=Depends(get_valkey_cache), session: AsyncSession=Depends(get_db)):
+async def put_record(request: PutRecordRequest, cache: Valkey=Depends(get_valkey), session: AsyncSession=Depends(get_db)):
     return await put_record_to_db(request, cache, session)

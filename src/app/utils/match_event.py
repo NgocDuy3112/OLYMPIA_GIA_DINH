@@ -142,8 +142,7 @@ async def process_client_event(
         global_logger.warning(f"[WS_PROCESS] Client message missing player_code: {client_msg}")
         return
 
-    current_status_raw = await valkey.get(f"match:{match_code}:buzz_status")
-    current_status = current_status_raw.decode('utf-8') if current_status_raw else ""
+    current_status = await valkey.get(f"match:{match_code}:buzz_status")
     global_logger.debug(f"[DEBUG] {player_code} buzz attempt. Current status: {current_status}")
 
     event = None
