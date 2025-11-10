@@ -17,8 +17,8 @@ async def publish_ws_event(pubsub: Valkey, match_code: str, event: dict):
     """
     channel = f"match:{match_code}:updates"
     try:
-        await pubsub.publish(channel, json.dumps(event))
-        global_logger.info(f"[WS] Published event to {channel}: {event}")
+        result = await pubsub.publish(channel, json.dumps(event))
+        global_logger.info(f"[WS] Published event to {channel}: {event}, result={result}")
     except Exception as e:
         global_logger.warning(f"[WS] Failed to publish event to {channel}: {e}")
 
@@ -28,19 +28,21 @@ async def auto_time_up(pubsub: Valkey, match_code: str, question_code: str, end_
     """Automatically fire time_up event when time_limit ends."""
     delay = max(0, end_time - time.time())
     await asyncio.sleep(delay)
-    
-    # Cập nhật trạng thái và loại bỏ khóa nếu nó chưa bị khóa bởi buzz (đã hết giờ đọc)
-    current_status_raw = await pubsub.get(f"match:{match_code}:buzz_status")
-    if current_status_raw and current_status_raw.decode('utf-8') == MATCH_STATUS_BUZZING:
-        await pubsub.set(f"match:{match_code}:buzz_status", "TIME_UP")
-    
-    event = {
-        "type": "time_up",
-        "match_code": match_code,
-        "question_code": question_code,
-    }
-    await pubsub.publish(f"match:{match_code}:updates", json.dumps(event))
-    global_logger.info(f"[TIME_UP] match={match_code} question={question_code}")
+
+    try:
+        current_status = await pubsub.get(f"match:{match_code}:buzz_status")
+        if current_status == MATCH_STATUS_BUZZING:
+            await pubsub.set(f"match:{match_code}:buzz_status", "TIME_UP")
+        event = {
+            "type": "time_up",
+            "match_code": match_code,
+            "question_code": question_code,
+        }
+        await pubsub.publish(f"match:{match_code}:updates", json.dumps(event))
+        global_logger.info(f"[TIME_UP] match={match_code} question={question_code}")
+
+    except Exception as e:
+        global_logger.error(f"[TIME_UP FAILED] match={match_code} question={question_code}: {e}")
 
 
 

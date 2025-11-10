@@ -23,6 +23,9 @@ export const useWebSocket = (matchCode: string) => {
 
     useEffect(() => {
         const url = createWsUrl(matchCode);
+        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+            ws.current.close();
+        }
         ws.current = new WebSocket(url);
 
         ws.current.onopen = () => {
@@ -42,6 +45,12 @@ export const useWebSocket = (matchCode: string) => {
         ws.current.onclose = () => {
             console.log(`[WS] Disconnected from match: ${matchCode}`);
             setIsConnected(false);
+            setTimeout(() => {
+                if (!ws.current || ws.current.readyState === WebSocket.CLOSED) {
+                    ws.current = new WebSocket(url);
+                    console.log(`[WS] Reconnecting...`);
+                }
+            }, 3000);
         };
 
         ws.current.onerror = (error) => {

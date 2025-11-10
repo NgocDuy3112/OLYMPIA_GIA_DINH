@@ -49,21 +49,24 @@ async def listen_to_websocket_client(websocket: WebSocket, match_code: str, valk
 
 async def handle_match_websocket(websocket: WebSocket, match_code: str, valkey: Valkey):
     await manager.connect(match_code, websocket)
-    subscriber = valkey.pubsub()
-    await subscriber.subscribe(f"match:{match_code}:updates")
-    global_logger.info(f"[WS] Client connected to match={match_code}")
+
+    # 🔹 Dùng chung 1 subscriber per match_code
+    if not manager.has_subscriber(match_code):
+        subscriber = valkey.pubsub()
+        await subscriber.subscribe(f"match:{match_code}:updates")
+        manager.set_subscriber(match_code, subscriber)
+        task = asyncio.create_task(listen_to_valkey_pubsub(manager, match_code, subscriber))
+        manager.set_subscriber_task(match_code, task)
+        global_logger.info(f"[WS] Started subscriber for match={match_code}")
+    else:
+        global_logger.debug(f"[WS] Reusing existing subscriber for match={match_code}")
 
     try:
-        await asyncio.gather(
-            listen_to_valkey_pubsub(manager, match_code, subscriber),
-            listen_to_websocket_client(websocket, match_code, valkey)
-        )
+        await listen_to_websocket_client(websocket, match_code, valkey)
     except WebSocketDisconnect:
         pass
     finally:
         manager.disconnect(match_code, websocket)
-        await subscriber.unsubscribe(f"match:{match_code}:updates")
-        global_logger.info(f"[WS] Disconnected from match={match_code}")
 
 
 
@@ -72,7 +75,6 @@ async def trigger_start_question(
     pubsub: Valkey
 ):
     try:
-        # Gọi hàm logic mà bạn đã viết
         result = await trigger_start_time(
             pubsub=pubsub,
             match_code=request.match_code,
