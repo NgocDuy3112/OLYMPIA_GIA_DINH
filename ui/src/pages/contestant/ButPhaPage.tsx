@@ -3,7 +3,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import PlayerBoard from "@/components/contestant/PlayerBoard";
 import QuestionArea from "@/components/contestant/QuestionArea";
 import InputAnswerArea from "@/components/contestant/InputAnswerArea";
-import SubmitAnswerButton from "@/components/contestant/SubmitAnswerButton";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import type { Player } from "@/types/player";
 
@@ -138,16 +137,6 @@ const ButPhaPage = () => {
                         answerInput={answerInput} 
                         setAnswerInput={setAnswerInput} 
                         isDisabled={isSubmissionDisabled} 
-                        onSubmit={handleSubmitAnswer} 
-                    />
-                </div>
-            </div>
-            {/* SubmitAnswerButton */}
-            <div className="p-5 w-full flex justify-center">
-                <div className="w-full max-w-7xl">
-                    <SubmitAnswerButton 
-                        answerInput={answerInput} 
-                        isInputActive={answerInput.trim().length > 0 && !isSubmissionDisabled} 
                         onSubmit={handleSubmitAnswer} 
                     />
                 </div>

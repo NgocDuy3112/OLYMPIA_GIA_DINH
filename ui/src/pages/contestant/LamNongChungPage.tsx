@@ -1,12 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback, useRef } from "react";
 import PlayerBoard from "@/components/contestant/PlayerBoard";
 import QuestionArea from "@/components/contestant/QuestionArea";
 import InputAnswerArea from "@/components/contestant/InputAnswerArea";
-import SubmitAnswerButton from "@/components/contestant/SubmitAnswerButton";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import type { Player } from "@/types/player";
-
 
 
 const MATCH_CODE = "M01T"; 
@@ -14,12 +11,6 @@ const CURRENT_PLAYER_CODE = "P01T";
 const QUESTION_CODE = "LN_C_01"; 
 const MAX_TIME = 10;
 
-
-const isMessageObject = (message: any): message is { type: string, player_code?: string, new_score?: number } => {
-    return (
-        typeof message === 'object' && message !== null && typeof message.type === 'string'
-    );
-};
 
 
 const LamNongChungPage = () => {
@@ -86,29 +77,29 @@ const LamNongChungPage = () => {
 
 
     useEffect(() => {
-        if (lastMessage && isMessageObject(lastMessage)) {
-            const msg = lastMessage;
-            if (msg.type === 'update_score' && msg.player_code && msg.new_score !== undefined) {
-                const newScore = msg.new_score as number;
-                
-                setPlayers(prevPlayers => prevPlayers.map(p => 
-                    p.code === msg.player_code 
-                        ? { ...p, score: newScore }
-                        : p
-                ));
-                
-
-                if (msg.player_code === CURRENT_PLAYER_CODE) {
-                    setAnswerInput('');
-                    setSubmitTime(undefined);
-                }
-            } 
-            
-            if (msg.type === 'start_the_timer') {
-                setTimer(MAX_TIME);
+        if (!lastMessage) return;
+        const data = typeof lastMessage === 'string' ? JSON.parse(lastMessage) : lastMessage;
+        switch (data.type) {
+            case 'start_the_timer':
                 setHasAnswered(false);
+                setTimer(data.time_limit);
                 timerStartTimeRef.current = Date.now();
-            }
+                break;
+            case 'update_score':
+                if (data.player_code && data.new_score !== undefined) {
+                    setPlayers(prevPlayers => prevPlayers.map(p =>
+                        p.code === data.player_code
+                            ? { ...p, score: data.new_score }
+                            : p
+                    ));
+                    if (data.player_code === CURRENT_PLAYER_CODE) {
+                        setAnswerInput('');
+                        setSubmitTime(undefined);
+                    }
+                }
+                break;
+            default:
+                break;
         }
     }, [lastMessage, setPlayers]);
 
@@ -138,16 +129,6 @@ const LamNongChungPage = () => {
                         answerInput={answerInput} 
                         setAnswerInput={setAnswerInput} 
                         isDisabled={isSubmissionDisabled}
-                        onSubmit={handleSubmitAnswer} 
-                    />
-                </div>
-            </div>
-            {/* SubmitAnswerButton */}
-            <div className="p-5 w-full flex justify-center">
-                <div className="w-full max-w-7xl">
-                    <SubmitAnswerButton 
-                        answerInput={answerInput} 
-                        isInputActive={answerInput.trim().length > 0 && !isSubmissionDisabled} 
                         onSubmit={handleSubmitAnswer} 
                     />
                 </div>

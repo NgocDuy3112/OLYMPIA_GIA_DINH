@@ -13,21 +13,21 @@ const QUESTION_CODE = 'LN_R1_01';
 
 const NuocRutCaNhanPage = () => {
     const [players, setPlayers] = useState<Player[]>([
-        { code: 'P01T', name: 'Hữu Khang', score: 60, isCurrent: true, isBuzzed: false }, 
+        { code: 'P01T', name: 'Hữu Khang', score: 60, isCurrent: true, isBuzzed: false },
         { code: 'P02T', name: 'Kiến Trúc', score: 45, isCurrent: false, isBuzzed: false },
         { code: 'P03T', name: 'Phượng Hoàng', score: 100, isCurrent: false, isBuzzed: false },
         { code: 'P04T', name: 'Đình Oánh', score: 55, isCurrent: false, isBuzzed: false },
     ]);
-    const [timer, setTimer] = useState(10);
+    const [timer, setTimer] = useState(0);
     const [hasPinged, setHasPinged] = useState(false);
     const [buzzerWinnerCode, setBuzzerWinnerCode] = useState<string | null>(null);
     const { isConnected, sendBuzz, lastMessage } = useWebSocket(MATCH_CODE);
 
-    const handlePing = useCallback(() => {
+    const handlePing = useCallback(async () => {
         if (!isConnected || hasPinged || timer <= 0 || buzzerWinnerCode) {
             return;
         }
-        const success = sendBuzz(CURRENT_PLAYER_CODE, QUESTION_CODE);
+        const success = await sendBuzz(CURRENT_PLAYER_CODE, QUESTION_CODE);
         if (success) {
             setHasPinged(true);
         }
@@ -35,31 +35,61 @@ const NuocRutCaNhanPage = () => {
 
     useEffect(() => {
         if (!lastMessage) return;
-        if (lastMessage.type === 'start_the_timer') {
-            setHasPinged(false);
-            setBuzzerWinnerCode(null);
-            setTimer(lastMessage.time_limit || 10);
-            setPlayers(prevPlayers => prevPlayers.map(p => ({ ...p, isBuzzed: false })));
-        }
-        if (lastMessage.type === 'buzzer_winner' && lastMessage.player_code) {
-            const winnerCode = lastMessage.player_code;
-            setBuzzerWinnerCode(winnerCode);
-            setPlayers(prevPlayers => prevPlayers.map(p => ({ 
-                ...p,
-                isBuzzed: p.code === winnerCode,
-            })));
+        const data = typeof lastMessage === 'string' ? JSON.parse(lastMessage) : lastMessage;
+
+        switch (data.type) {
+            case 'start_the_timer':
+                setHasPinged(false);
+                setBuzzerWinnerCode(null);
+                setTimer(data.time_limit);
+                setPlayers(prev => prev.map(p => ({ ...p, isBuzzed: false })));
+                break;
+            case 'buzzer_winner':
+                setBuzzerWinnerCode(data.player_code);
+                setPlayers(prev => prev.map(p => ({
+                    ...p,
+                    isBuzzed: p.code === data.player_code,
+                })));
+                break;
+            default:
+                break;
         }
     }, [lastMessage]);
 
     useEffect(() => {
-        if (timer > 0 && !buzzerWinnerCode) { 
+        if (!lastMessage) return;
+        const msg = typeof lastMessage === 'string' ? JSON.parse(lastMessage) : lastMessage;
+
+        if (msg.type === 'update_score' && msg.player_code && typeof msg.new_score === 'number') {
+            setPlayers(prevPlayers =>
+                prevPlayers.map(player =>
+                    player.code === msg.player_code ? { ...player, score: msg.new_score } : player
+                )
+            );
+            if (msg.player_code === CURRENT_PLAYER_CODE) {
+                // Assuming answerInput and setSubmitTime are defined in this component,
+                // but since they are not present in the original code, we do not implement them here.
+                // This is just to follow the instruction.
+                // setAnswerInput('');
+                // setSubmitTime(undefined);
+            }
+        }
+        if (msg.type === 'start_the_timer') {
+            setTimer(msg.time_limit || 0);
+            // setHasAnswered(false);
+            // timerStartTimeRef.current = Date.now();
+        }
+    }, [lastMessage]);
+
+    useEffect(() => {
+        if (timer > 0) {
             const intervalId = setInterval(() => {
                 setTimer(prevTimer => prevTimer - 1);
             }, 1000);
 
             return () => clearInterval(intervalId);
         }
-    }, [timer, buzzerWinnerCode]); 
+    }, [timer]);
 
     const isPingDisabled = hasPinged || timer <= 0 || !isConnected || !!buzzerWinnerCode;
 
@@ -74,19 +104,19 @@ const NuocRutCaNhanPage = () => {
             {/* QuestionArea */}
             <div className="p-5 w-full flex justify-center">
                 <div className="w-full max-w-7xl">
-                    <QuestionArea 
-                        title="NƯỚC RÚT - LƯỢT CÁ NHÂN" 
-                        questionContent="Nếu 23 + 15 = 38 thì năm nay tôi bao nhiêu tuổi?" 
-                        mediaUrl="../image/background.jpg" 
+                    <QuestionArea
+                        title="LÀM NÓNG - LƯỢT CÁ NHÂN"
+                        questionContent="Nếu 23 + 15 = 38 thì năm nay tôi bao nhiêu tuổi?"
+                        mediaUrl="../image/background.jpg"
                         timerDisplay={timer.toString().padStart(2, '0')}
                     />
                 </div>
             </div>
             <div className="p-3 w-full flex justify-center">
                 <div className="w-full max-w-7xl">
-                    <PingButton 
-                        isEnabled={!isPingDisabled} 
-                        onSubmit={handlePing} 
+                    <PingButton
+                        isEnabled={!isPingDisabled}
+                        onSubmit={handlePing}
                     />
                 </div>
             </div>

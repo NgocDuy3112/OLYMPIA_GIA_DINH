@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback, useRef } from "react";
 import PlayerBoard from "@/components/contestant/PlayerBoard";
 import QuestionArea from "@/components/contestant/QuestionArea";
 import InputAnswerArea from "@/components/contestant/InputAnswerArea";
-import SubmitAnswerButton from "@/components/contestant/SubmitAnswerButton";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import type { Player } from "@/types/player";
 
@@ -13,14 +11,6 @@ const MATCH_CODE = "M01T";
 const CURRENT_PLAYER_CODE = "P01T";
 const QUESTION_CODE = "LN_C_01";
 const MAX_TIME = 30;
-
-
-
-const isMessageObject = (message: any): message is { type: string, player_code?: string, new_score?: number } => {
-    return (
-        typeof message === 'object' && message !== null && typeof message.type === 'string'
-    );
-};
 
 
 
@@ -34,7 +24,7 @@ const NuocRutChungPage = () => {
     const [timer, setTimer] = useState(0);
     const [answerInput, setAnswerInput] = useState('');
     const [, setSubmitTime] = useState<number | undefined>(undefined);
-    const [, setHasAnswered] = useState(false);
+    const [, setHasAnswered] = useState(false); 
     const { isConnected, lastMessage, sendAnswer } = useWebSocket(MATCH_CODE);
 
     const timerStartTimeRef = useRef<number | null>(null);
@@ -52,18 +42,18 @@ const NuocRutChungPage = () => {
             let finalTimestamp: number;
             if (timerStartTimeRef.current !== null) {
                 const timeElapsedSinceStart = (submitTimestampMs - timerStartTimeRef.current) / 1000;
-                finalTimestamp = timeElapsedSinceStart;
+                finalTimestamp = timeElapsedSinceStart; 
             } else {
-                finalTimestamp = MAX_TIME - timer;
+                finalTimestamp = MAX_TIME - timer; 
             }
             finalTimestamp = Math.max(0, Math.min(MAX_TIME, finalTimestamp));
             setSubmitTime(finalTimestamp);
             setHasAnswered(true);
-            setPlayers(prevPlayers => prevPlayers.map(p =>
-                p.code === CURRENT_PLAYER_CODE
-                    ? {
-                        ...p,
-                        lastAnswer: trimmedAnswer,
+            setPlayers(prevPlayers => prevPlayers.map(p => 
+                p.code === CURRENT_PLAYER_CODE 
+                    ? { 
+                        ...p, 
+                        lastAnswer: trimmedAnswer, 
                         timestamp: parseFloat(finalTimestamp.toFixed(3))
                     }
                     : p
@@ -88,29 +78,29 @@ const NuocRutChungPage = () => {
 
 
     useEffect(() => {
-        if (lastMessage && isMessageObject(lastMessage)) {
-            const msg = lastMessage;
-            if (msg.type === 'update_score' && msg.player_code && msg.new_score !== undefined) {
-                const newScore = msg.new_score as number;
-
-                setPlayers(prevPlayers => prevPlayers.map(p =>
-                    p.code === msg.player_code
-                        ? { ...p, score: newScore }
-                        : p
-                ));
-
-
-                if (msg.player_code === CURRENT_PLAYER_CODE) {
-                    setAnswerInput('');
-                    setSubmitTime(undefined);
-                }
-            }
-
-            if (msg.type === 'start_the_timer') {
-                setTimer(MAX_TIME);
+        if (!lastMessage) return;
+        const data = typeof lastMessage === 'string' ? JSON.parse(lastMessage) : lastMessage;
+        switch (data.type) {
+            case 'start_the_timer':
                 setHasAnswered(false);
+                setTimer(data.time_limit);
                 timerStartTimeRef.current = Date.now();
-            }
+                break;
+            case 'update_score':
+                if (data.player_code && data.new_score !== undefined) {
+                    setPlayers(prevPlayers => prevPlayers.map(p =>
+                        p.code === data.player_code
+                            ? { ...p, score: data.new_score }
+                            : p
+                    ));
+                    if (data.player_code === CURRENT_PLAYER_CODE) {
+                        setAnswerInput('');
+                        setSubmitTime(undefined);
+                    }
+                }
+                break;
+            default:
+                break;
         }
     }, [lastMessage, setPlayers]);
 
@@ -123,34 +113,24 @@ const NuocRutChungPage = () => {
             {/* Scoreboard */}
             <div className="flex gap-4 max-w-7xl w-full justify-center mt-5">
                 {players.map(c => (
-                    <PlayerBoard key={c.code} player={c} />
+                    <PlayerBoard key={c.code} player={c} /> 
                 ))}
             </div>
 
             {/* QuestionArea */}
             <div className="p-5 w-full flex justify-center">
                 <div className="w-full max-w-7xl">
-                    <QuestionArea title="LÀM NÓNG - LƯỢT CHUNG" questionContent="Đoạn trailer chính thức của giải đấu Liên Quân quốc tế AIC 2024 có xuất hiện hình ảnh của một chiếc xe lửa được sử dụng cho một tuyến đường sắt là một phần của hệ thống tuyến đường sắt xuyên lục địa Á - Âu. Tuyến đường sắt này có tên là gì, và tuyến đường sắt này không đi qua (các) thành phố nào trong các thành phố sau: Hà Nội (1), Hà Nam (2), Nam Định (3), Ninh Bình (4), Thanh Hoá (5), Nghệ An (6), Hà Tĩnh (7), Quảng Bình (8), Quảng Trị (9), Thừa Thiên Huế (10), Đà Nẵng (11), Quảng Nam (12), Quảng Ngãi (13), Bình Định (14), Phú Yên (15), Khánh Hoà (16), Ninh Thuận (17), Bình Thuận (18), Lâm Đồng (19), Đồng Nai (20), Bình Dương (21), Thành phố Hồ Chí Minh (22), Cần Thơ (23), Đồng Tháp (24)?" timerDisplay={timerDisplay} />
+                    <QuestionArea title="LÀM NÓNG - LƯỢT CHUNG" questionContent="Đoạn trailer chính thức của giải đấu Liên Quân quốc tế AIC 2024 có xuất hiện hình ảnh của một chiếc xe lửa được sử dụng cho một tuyến đường sắt là một phần của hệ thống tuyến đường sắt xuyên lục địa Á - Âu. Tuyến đường sắt này có tên là gì, và tuyến đường sắt này không đi qua (các) thành phố nào trong các thành phố sau: Hà Nội (1), Hà Nam (2), Nam Định (3), Ninh Bình (4), Thanh Hoá (5), Nghệ An (6), Hà Tĩnh (7), Quảng Bình (8), Quảng Trị (9), Thừa Thiên Huế (10), Đà Nẵng (11), Quảng Nam (12), Quảng Ngãi (13), Bình Định (14), Phú Yên (15), Khánh Hoà (16), Ninh Thuận (17), Bình Thuận (18), Lâm Đồng (19), Đồng Nai (20), Bình Dương (21), Thành phố Hồ Chí Minh (22), Cần Thơ (23), Đồng Tháp (24)?" timerDisplay={timerDisplay}/>
                 </div>
             </div>
             {/* InputAnswerArea */}
             <div className="w-full flex justify-center">
                 <div className="w-full max-w-7xl">
-                    <InputAnswerArea
-                        answerInput={answerInput}
-                        setAnswerInput={setAnswerInput}
+                    <InputAnswerArea 
+                        answerInput={answerInput} 
+                        setAnswerInput={setAnswerInput} 
                         isDisabled={isSubmissionDisabled}
-                        onSubmit={handleSubmitAnswer}
-                    />
-                </div>
-            </div>
-            {/* SubmitAnswerButton */}
-            <div className="p-5 w-full flex justify-center">
-                <div className="w-full max-w-7xl">
-                    <SubmitAnswerButton
-                        answerInput={answerInput}
-                        isInputActive={answerInput.trim().length > 0 && !isSubmissionDisabled}
-                        onSubmit={handleSubmitAnswer}
+                        onSubmit={handleSubmitAnswer} 
                     />
                 </div>
             </div>

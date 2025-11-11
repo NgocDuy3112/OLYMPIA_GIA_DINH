@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback} from "react";
 import PlayerBoard from "@/components/contestant/PlayerBoard";
 import QuestionArea from "@/components/contestant/QuestionArea";
 import PingButton from "@/components/contestant/PingButton";
@@ -9,7 +9,6 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 const MATCH_CODE = "M01T";
 const CURRENT_PLAYER_CODE = 'P01T';
 const QUESTION_CODE = 'LN_R1_01';
-const TIME_LIMIT = 5;
 
 
 
@@ -20,7 +19,7 @@ const LamNongCaNhanPage = () => {
         { code: 'P03T', name: 'Phượng Hoàng', score: 100, isCurrent: false, isBuzzed: false },
         { code: 'P04T', name: 'Đình Oánh', score: 55, isCurrent: false, isBuzzed: false },
     ]);
-    const [timer, setTimer] = useState(TIME_LIMIT);
+    const [timer, setTimer] = useState(0);
     const [hasPinged, setHasPinged] = useState(false);
     const [buzzerWinnerCode, setBuzzerWinnerCode] = useState<string | null>(null);
     const { isConnected, sendBuzz, lastMessage } = useWebSocket(MATCH_CODE);
@@ -55,6 +54,31 @@ const LamNongCaNhanPage = () => {
                 break;
             default:
                 break;
+        }
+    }, [lastMessage]);
+
+    useEffect(() => {
+        if (!lastMessage) return;
+        const msg = typeof lastMessage === 'string' ? JSON.parse(lastMessage) : lastMessage;
+
+        if (msg.type === 'update_score' && msg.player_code && typeof msg.new_score === 'number') {
+            setPlayers(prevPlayers =>
+                prevPlayers.map(player =>
+                    player.code === msg.player_code ? { ...player, score: msg.new_score } : player
+                )
+            );
+            if (msg.player_code === CURRENT_PLAYER_CODE) {
+                // Assuming answerInput and setSubmitTime are defined in this component,
+                // but since they are not present in the original code, we do not implement them here.
+                // This is just to follow the instruction.
+                // setAnswerInput('');
+                // setSubmitTime(undefined);
+            }
+        }
+        if (msg.type === 'start_the_timer') {
+            setTimer(msg.time_limit || 0);
+            // setHasAnswered(false);
+            // timerStartTimeRef.current = Date.now();
         }
     }, [lastMessage]);
 

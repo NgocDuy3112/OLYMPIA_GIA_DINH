@@ -1,34 +1,33 @@
 import React from "react";
-import { Send } from "lucide-react";
+import { Key } from "lucide-react";
 
 
 
-interface SubmitAnswerButtonProps {
-    answerInput: string;
-    isInputActive: boolean;
+interface SolveKeywordButtonProps {
+    isEnabled: boolean;
     onSubmit: () => void;
 }
 
 
 
-const SubmitAnswerButton: React.FC<SubmitAnswerButtonProps> = ({answerInput, isInputActive, onSubmit}) => {
-    const isDisabled = answerInput.trim() === '' || !isInputActive;
+const SolveKeywordButton: React.FC<SolveKeywordButtonProps> = ({isEnabled, onSubmit}) => {
+    const isDisaled = !isEnabled;
     return (
         <button
             onClick={onSubmit}
-            disabled={isDisabled}
+            disabled={isDisaled}
             className={`w-full px-4 h-auto rounded-lg text-base font-bold shadow-md transition duration-200 flex items-center justify-center 
-                ${isDisabled
+                ${isDisaled
                     ? 'bg-red-900 ring-red-600 ring-4 text-red-300 cursor-not-allowed'
                     : 'bg-red-600 ring-red-300 ring-4 text-white'
                 }`
             }
         >
-            <Send className="w-5 h-5 mr-2" />
-            GỬI ĐÁP ÁN
+            <Key className="w-5 h-5 mr-2" />
+            BẤM CHUÔNG GIẢI MÃ TỪ KHOÁ
         </button>
     )
 }
 
 
-export default SubmitAnswerButton;
+export default SolveKeywordButton;
