@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useParams } from "react-router-dom";
 import PlayerBoard from "@/components/contestant/PlayerBoard";
 import QuestionArea from "@/components/contestant/QuestionArea";
 import PingButton from "@/components/contestant/PingButton";
@@ -12,11 +13,12 @@ const QUESTION_CODE = 'LN_R1_01';
 
 
 const NuocRutCaNhanPage = () => {
+    const { playerCode } = useParams<{ playerCode: string }>();
     const [players, setPlayers] = useState<Player[]>([
-        { code: 'P01T', name: 'Hữu Khang', score: 60, isCurrent: true, isBuzzed: false },
-        { code: 'P02T', name: 'Kiến Trúc', score: 45, isCurrent: false, isBuzzed: false },
-        { code: 'P03T', name: 'Phượng Hoàng', score: 100, isCurrent: false, isBuzzed: false },
-        { code: 'P04T', name: 'Đình Oánh', score: 55, isCurrent: false, isBuzzed: false },
+        { code: 'P01T', name: 'Hữu Khang', score: 60, isBuzzed: false },
+        { code: 'P02T', name: 'Kiến Trúc', score: 45, isBuzzed: false },
+        { code: 'P03T', name: 'Phượng Hoàng', score: 100, isBuzzed: false },
+        { code: 'P04T', name: 'Đình Oánh', score: 55, isBuzzed: false },
     ]);
     const [timer, setTimer] = useState(0);
     const [hasPinged, setHasPinged] = useState(false);
@@ -57,6 +59,7 @@ const NuocRutCaNhanPage = () => {
     }, [lastMessage]);
 
     useEffect(() => {
+        const currentPlayerCode = playerCode || "";
         if (!lastMessage) return;
         const msg = typeof lastMessage === 'string' ? JSON.parse(lastMessage) : lastMessage;
 
@@ -66,7 +69,7 @@ const NuocRutCaNhanPage = () => {
                     player.code === msg.player_code ? { ...player, score: msg.new_score } : player
                 )
             );
-            if (msg.player_code === CURRENT_PLAYER_CODE) {
+            if (msg.player_code === currentPlayerCode) {
                 // Assuming answerInput and setSubmitTime are defined in this component,
                 // but since they are not present in the original code, we do not implement them here.
                 // This is just to follow the instruction.
@@ -79,7 +82,7 @@ const NuocRutCaNhanPage = () => {
             // setHasAnswered(false);
             // timerStartTimeRef.current = Date.now();
         }
-    }, [lastMessage]);
+    }, [lastMessage, playerCode]);
 
     useEffect(() => {
         if (timer > 0) {
@@ -97,8 +100,8 @@ const NuocRutCaNhanPage = () => {
         <div className="flex flex-col justify-start items-center min-h-screen">
             {/* Scoreboard */}
             <div className="flex gap-4 max-w-7xl w-full justify-center mt-5">
-                {players.map(c => (
-                    <PlayerBoard key={c.code} player={c} />
+                {players.map(p => (
+                    <PlayerBoard key={p.code} player={p} isCurrent={p.code == playerCode}/>
                 ))}
             </div>
             {/* QuestionArea */}

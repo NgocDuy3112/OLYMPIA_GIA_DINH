@@ -6,11 +6,12 @@ import type { Player } from "@/types/player";
 
 interface PlayerBoardProps {
     player: Player
+    isCurrent: boolean
 }
 
 
 
-const PlayerBoard: React.FC<PlayerBoardProps> = ({ player }) => {
+const PlayerBoard: React.FC<PlayerBoardProps> = ({ player, isCurrent }) => {
     const answerContent = player.lastAnswer?.trim() ?? '';
     const isAnswered = answerContent !== '---' && answerContent !== '';
     let displayAnswer: string | null = null;
@@ -53,7 +54,7 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({ player }) => {
         <div
             key={player.code}
             className={`flex flex-col items-center p-2 rounded-lg transition duration-300 w-1/4 ml-1 mr-1 min-h-[125px] shadow-sm
-                ${player.isCurrent
+                ${isCurrent
                     ? 'bg-red-600 shadow-xl scale-100 ring-4 text-white ring-red-300'
                     : 'ring-2 ring-red-600 bg-red-900 text-red-300'
                 }`}

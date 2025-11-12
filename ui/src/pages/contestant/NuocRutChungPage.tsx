@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useParams } from "react-router-dom";
 import PlayerBoard from "@/components/contestant/PlayerBoard";
 import QuestionArea from "@/components/contestant/QuestionArea";
 import InputAnswerArea from "@/components/contestant/InputAnswerArea";
@@ -8,18 +9,18 @@ import type { Player } from "@/types/player";
 
 
 const MATCH_CODE = "M01T";
-const CURRENT_PLAYER_CODE = "P01T";
 const QUESTION_CODE = "LN_C_01";
 const MAX_TIME = 30;
 
 
 
 const NuocRutChungPage = () => {
+    const { playerCode } = useParams<{ playerCode: string }>();
     const [players, setPlayers] = useState<Player[]>([
-        { code: 'P01T', name: 'Hữu Khang', score: 60, isCurrent: true, lastAnswer: '', timestamp: 8.907 },
-        { code: 'P02T', name: 'Kiến Trúc', score: 45, isCurrent: false, lastAnswer: '', timestamp: 9.005 },
-        { code: 'P03T', name: 'Phượng Hoàng', score: 100, isCurrent: false, lastAnswer: '' },
-        { code: 'P04T', name: 'Đình Oánh', score: 55, isCurrent: false, lastAnswer: '' },
+        { code: 'P01T', name: 'Hữu Khang', score: 60, lastAnswer: '', timestamp: 8.907 },
+        { code: 'P02T', name: 'Kiến Trúc', score: 45, lastAnswer: '', timestamp: 9.005 },
+        { code: 'P03T', name: 'Phượng Hoàng', score: 100, lastAnswer: '' },
+        { code: 'P04T', name: 'Đình Oánh', score: 55, lastAnswer: '' },
     ]);
     const [timer, setTimer] = useState(0);
     const [answerInput, setAnswerInput] = useState('');
@@ -30,13 +31,14 @@ const NuocRutChungPage = () => {
     const timerStartTimeRef = useRef<number | null>(null);
 
     const handleSubmitAnswer = useCallback(async () => {
+        const currentPlayerCode = playerCode || "";
         const trimmedAnswer = answerInput.trim();
 
         if (!trimmedAnswer || !isConnected || timer <= 0) {
             return;
         }
         const submitTimestampMs = Date.now();
-        const success = await sendAnswer(CURRENT_PLAYER_CODE, QUESTION_CODE, trimmedAnswer, submitTimestampMs);
+        const success = await sendAnswer(currentPlayerCode, QUESTION_CODE, trimmedAnswer, submitTimestampMs);
 
         if (success) {
             let finalTimestamp: number;
@@ -50,7 +52,7 @@ const NuocRutChungPage = () => {
             setSubmitTime(finalTimestamp);
             setHasAnswered(true);
             setPlayers(prevPlayers => prevPlayers.map(p => 
-                p.code === CURRENT_PLAYER_CODE 
+                p.code === currentPlayerCode 
                     ? { 
                         ...p, 
                         lastAnswer: trimmedAnswer, 
@@ -59,7 +61,7 @@ const NuocRutChungPage = () => {
                     : p
             ));
         }
-    }, [answerInput, isConnected, sendAnswer, timer, setPlayers]);
+    }, [answerInput, isConnected, sendAnswer, timer, setPlayers, playerCode]);
 
 
     useEffect(() => {
@@ -78,6 +80,7 @@ const NuocRutChungPage = () => {
 
 
     useEffect(() => {
+        const currentPlayerCode = playerCode || "";
         if (!lastMessage) return;
         const data = typeof lastMessage === 'string' ? JSON.parse(lastMessage) : lastMessage;
         switch (data.type) {
@@ -93,7 +96,7 @@ const NuocRutChungPage = () => {
                             ? { ...p, score: data.new_score }
                             : p
                     ));
-                    if (data.player_code === CURRENT_PLAYER_CODE) {
+                    if (data.player_code === currentPlayerCode) {
                         setAnswerInput('');
                         setSubmitTime(undefined);
                     }
@@ -102,7 +105,7 @@ const NuocRutChungPage = () => {
             default:
                 break;
         }
-    }, [lastMessage, setPlayers]);
+    }, [lastMessage, setPlayers, playerCode]);
 
     const timerDisplay = timer.toString().padStart(2, '0');
     const isSubmissionDisabled = !isConnected || timer <= 0;
@@ -112,8 +115,8 @@ const NuocRutChungPage = () => {
         <div className="flex flex-col justify-start items-center min-h-screen">
             {/* Scoreboard */}
             <div className="flex gap-4 max-w-7xl w-full justify-center mt-5">
-                {players.map(c => (
-                    <PlayerBoard key={c.code} player={c} /> 
+                {players.map(p => (
+                    <PlayerBoard key={p.code} player={p} isCurrent={p.code == playerCode}/> 
                 ))}
             </div>
 

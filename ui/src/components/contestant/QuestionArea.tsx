@@ -55,7 +55,7 @@ const QuestionArea: React.FC<QuestionAreaProps> = ({ title, questionContent, med
                 <p className="text-4xl font-[SVN-Gratelos_Display] font-extrabold text-red-300 uppercase">
                     {title}
                 </p>
-                <div className={`text-5xl font-[SVN-Gratelos_Display] font-extrabold px-3 py-1 transition-colors duration-500 text-white`} >
+                <div className="text-5xl font-[SVN-Gratelos_Display] font-extrabold px-3 py-1 transition-colors duration-500 text-white" >
                     {timerDisplay}
                 </div>
             </div>
