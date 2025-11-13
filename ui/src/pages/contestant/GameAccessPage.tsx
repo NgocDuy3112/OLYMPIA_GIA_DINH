@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 
-const LoginPage: React.FC = () => {
+const GameAccessPage: React.FC = () => {
     const [playerCode, setPlayerCode] = useState("");
     const [matchCode, setMatchCode] = useState("");
     const navigate = useNavigate();
@@ -52,4 +52,4 @@ const LoginPage: React.FC = () => {
     );
 };
 
-export default LoginPage;
+export default GameAccessPage;
